@@ -1,0 +1,150 @@
+{
+  "version": "2026-11-14",
+  "note": "Bandlar Raqobat qoʻmitasining 132 ta quruvchi shartnomasi boʻyicha 2026-yil 6-noyabrdagi tahliliga asoslangan. legal_basis maydonlari hali yurist tomonidan tasdiqlanmagan: bot foydalanuvchiga modda raqamini aytmaydi.",
+  "items": [
+    {
+      "id": "topshirish_muddati",
+      "title": "Uyni topshirishning aniq muddati",
+      "severity": "yuqori",
+      "look_for": "Xonadonni topshirish sanasi aniq kun/oy/yil bilan koʻrsatilganmi. \"Taxminan\", \"choragida\", \"qurilish tugagach\", \"quruvchi muddatni uzaytirishi mumkin\" kabi noaniq yoki bir tomonlama oʻzgartiriladigan iboralar muammo hisoblanadi.",
+      "why": "Aniq sana boʻlmasa, kechikishni isbotlab boʻlmaydi va penya talab qilish qiyinlashadi.",
+      "ask_developer": "Xonadon qaysi sanada topshiriladi? Shu sanani shartnomaga kun, oy, yil bilan yozib bering.",
+      "stat": "Tekshirilgan shartnomalarning 33,3 foizida aniq muddat yoʻq.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "kechikish_penyasi",
+      "title": "Kechikish uchun quruvchining javobgarligi (penya)",
+      "severity": "yuqori",
+      "look_for": "Quruvchi topshirish muddatini buzsa, xaridorga penya yoki jarima toʻlashi yozilganmi va uning miqdori koʻrsatilganmi. Penya umuman yoʻqligi, ramziy miqdor yoki \"quruvchi javobgar emas\" degan bandlar muammo.",
+      "why": "Penya yozilmagan boʻlsa, quruvchini kechikish uchun javobgarlikka tortish sud orqali va qiyin kechadi.",
+      "ask_developer": "Topshirish kechiksa, har bir kun uchun qancha penya toʻlaysiz? Buni shartnomaga kiriting.",
+      "stat": "Shartnomalarning 50,8 foizida quruvchi uchun penya belgilanmagan.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "pul_qaytarish_muddati",
+      "title": "Shartnoma bekor boʻlganda pulni qaytarish muddati",
+      "severity": "yuqori",
+      "look_for": "Shartnoma bekor qilinganda toʻlangan pul necha kun ichida qaytarilishi aniq yozilganmi. Muddat yoʻqligi yoki juda uzoq, boʻlib-boʻlib qaytarish shartlari muammo.",
+      "why": "Muddat koʻrsatilmasa, quruvchi pulni oylab, yillab ushlab turishi mumkin.",
+      "ask_developer": "Shartnoma bekor boʻlsa, pulimni necha kun ichida toʻliq qaytarasiz?",
+      "stat": "Shartnomalarning 77,3 foizida qaytarish muddati yoʻq yoki toʻlov muddatiga mos emas.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "pul_ushlab_qolish",
+      "title": "Bekor qilinganda pulning bir qismini ushlab qolish",
+      "severity": "yuqori",
+      "look_for": "Xaridor shartnomadan chiqsa, toʻlangan summaning foizi (odatda 4–15%) ushlab qolinishi, \"xizmat haqi\", \"maʼmuriy xarajat\" yoki jarima sifatida chegirib qolinishi.",
+      "why": "Katta summadan bir necha foiz ham oʻn millionlab soʻm boʻladi; Qoʻmita buni xaridor huquqini cheklovchi shart deb baholagan.",
+      "ask_developer": "Shartnomadan chiqsam, qancha pul ushlab qolinadi va nima asosda?",
+      "stat": "Qoʻmita toʻlangan mablagʻning 4–15 foizi ushlab qolinadigan shartnomalarni aniqlagan.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "qayta_sotilgach_qaytarish",
+      "title": "Pulni uy qayta sotilgandan keyingina qaytarish",
+      "severity": "yuqori",
+      "look_for": "Pul \"xonadon boshqa xaridorga sotilgandan keyin\", \"yangi xaridor topilgach\" qaytarilishi haqidagi shartlar.",
+      "why": "Qaytarish sanasi quruvchining ixtiyoriga bogʻlanadi; uy sotilmasa, pul qaytmaydi.",
+      "ask_developer": "Pulni qaytarish uyning qayta sotilishiga bogʻliqmi? Bu shartni olib tashlab, aniq muddat yozing.",
+      "stat": "Qoʻmita bunday shartlarni huquqni cheklovchi deb qayd etgan.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "kafolat_muddati",
+      "title": "Topshirilgandan keyingi kafolat muddati",
+      "severity": "orta",
+      "look_for": "Xonadon qabul qilingandan keyin amal qiladigan kafolat muddati (yil yoki oy bilan) yozilganmi.",
+      "why": "Kafolat muddati yozilmasa, keyin chiqqan yoriq, sizish kabi nuqsonlarni quruvchiga tuzattirish qiyin.",
+      "ask_developer": "Xonadon va umumiy muhandislik tizimlariga necha yil kafolat berasiz?",
+      "stat": "Shartnomalarning 63,6 foizida kafolat muddati koʻrsatilmagan.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "nuqsonlarni_bartaraf_etish",
+      "title": "Kafolat davrida nuqsonlarni tuzatish majburiyati",
+      "severity": "orta",
+      "look_for": "Kafolat davrida aniqlangan nuqsonlarni quruvchi oʻz hisobidan va aniq muddatda bartaraf etishi yozilganmi. \"Xaridor qabul qilgach, daʼvo qabul qilinmaydi\" kabi bandlar muammo.",
+      "why": "Majburiyat yozilmagan boʻlsa, kafolat muddati amalda ishlamaydi.",
+      "ask_developer": "Kafolat davrida nuqson chiqsa, kim, qancha muddatda va kimning hisobidan tuzatadi?",
+      "stat": "Shartnomalarning 54,5 foizida bunday majburiyat nazarda tutilmagan.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "narxni_bir_tomonlama_oshirish",
+      "title": "Narxni bir tomonlama oshirish",
+      "severity": "yuqori",
+      "look_for": "Quruvchi narxni xaridor roziligisiz oʻzgartira olishi: material narxi, valyuta kursi, inflyatsiya, \"bozor sharoiti\" sabab qilib koʻrsatilgan bandlar; maydon oʻzgarsa faqat xaridor qoʻshimcha toʻlashi.",
+      "why": "Kelishilgan narx kafolatlanmaydi; toʻlab boʻlingan summadan keyin ham qoʻshimcha talab qilinishi mumkin.",
+      "ask_developer": "Shartnoma narxi qatʼiymi? Qaysi holatlarda oʻzgarishi mumkin?",
+      "stat": "Qoʻmita narxni bir tomonlama oshirishga ruxsat beruvchi bandlarni aniqlagan.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "xaridorga_jarimalar",
+      "title": "Xaridorga yuqori jarimalar va tomonlar javobgarligining nomutanosibligi",
+      "severity": "orta",
+      "look_for": "Xaridor toʻlovni kechiktirsa qoʻllanadigan penya miqdori quruvchining kechikish penyasidan ancha yuqoriligi; bir-ikki kun kechikish uchun shartnomani bir tomonlama bekor qilish huquqi; javobgarlik faqat xaridorga yuklangani.",
+      "why": "Shartnoma faqat quruvchi manfaatini koʻzlasa, nizo chiqqanda xaridor zaif tomonda qoladi.",
+      "ask_developer": "Mening kechikishim va sizning kechikishingiz uchun penya nega teng emas? Tenglashtiring.",
+      "stat": "Shartnomalarning 59,1 foizi faqat quruvchi manfaatini koʻzlab tuzilgan.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "shartnoma_tili",
+      "title": "Shartnoma tili",
+      "severity": "past",
+      "look_for": "Shartnoma davlat tilida (oʻzbek tilida) tuzilganmi. Faqat rus tilida tuzilgan boʻlsa, muammo deb belgilang.",
+      "why": "Xaridor tushunmaydigan tilda tuzilgan shartnomadagi shartlarni toʻliq anglamasdan imzolashi mumkin.",
+      "ask_developer": "Shartnomaning oʻzbek tilidagi nusxasini bering.",
+      "stat": "Shartnomalarning 30,3 foizi davlat tilida emas, rus tilida tuzilgan.",
+      "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
+      "legal_basis": null,
+      "legal_verified": false
+    },
+    {
+      "id": "royxatdan_otkazish",
+      "title": "Shartnomani roʻyxatdan oʻtkazish",
+      "severity": "yuqori",
+      "look_for": "Shartnoma roʻyxatdan oʻtkazilishi (elektron reyestr, davlat roʻyxati, notarial tasdiq) va bu kimning zimmasida ekani yozilganmi. \"Dastlabki shartnoma\", \"bron shartnomasi\", \"investitsiya shartnomasi\" kabi nomlar ostida pul yigʻilishi ham muammo belgisi.",
+      "why": "Roʻyxatdan oʻtmagan shartnoma boʻyicha bir xonadon bir necha kishiga sotilishi mumkin.",
+      "ask_developer": "Shartnoma qayerda roʻyxatdan oʻtkaziladi va roʻyxat raqamini qachon olaman?",
+      "stat": "Amaldagi tartibga koʻra quruvchi mablagʻni shartnoma roʻyxatdan oʻtgandan keyin jalb qilishi mumkin; yangi qonun loyihasi notarial tasdiq va davlat roʻyxatini majburiy qiladi (2026-yil 10-noyabr holatiga Senat va Prezident bosqichida).",
+      "source": "https://www.gazeta.uz/oz/2026/11/10/shared-equity-construction/",
+      "legal_basis": "PQ-4732 (27.05.2020), https://lex.uz/docs/-4831129 — aniq band yurist tomonidan tasdiqlanishi kerak",
+      "legal_verified": false
+    },
+    {
+      "id": "maydon_farqi",
+      "title": "Xonadon maydonining farq qilishi",
+      "severity": "orta",
+      "look_for": "Haqiqiy maydon shartnomadagidan farq qilsa nima boʻlishi yozilganmi. Maydon kamaysa pul qaytarilmasligi, maʼlum foizgacha farq hisobga olinmasligi yoki ortsa faqat xaridor qoʻshimcha toʻlashi muammo.",
+      "why": "Bir necha kvadrat metr farq ham katta summa; shart bir tomonlama boʻlsa, xaridor yoʻqotadi.",
+      "ask_developer": "Maydon kam chiqsa, farqni qaysi narxda va qancha muddatda qaytarasiz?",
+      "stat": "Yangi qonun loyihasida maydonning taxminan 5 foizgacha farq qilishiga ruxsat beruvchi qoida chiqarib tashlangan (hali kuchga kirmagan).",
+      "source": "https://www.gazeta.uz/oz/2026/11/10/shared-equity-construction/",
+      "legal_basis": null,
+      "legal_verified": false
+    }
+  ]
+}
