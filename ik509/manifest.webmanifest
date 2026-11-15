@@ -1,6 +1,6 @@
 {
-  "name": "IK-509 test trenajyori",
-  "short_name": "IK-509",
+  "name": "Test trenajyor",
+  "short_name": "Testlar",
   "description": "Test savollariga tayyorlanish: aqlli takrorlash, imtihon rejimi, kartochkalar.",
   "lang": "uz",
   "start_url": "./",
