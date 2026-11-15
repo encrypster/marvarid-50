@@ -75,6 +75,7 @@ mark{background:var(--hl);color:inherit;padding:0 3px;border-radius:4px;font-wei
 div.opt{cursor:default}
 .opt.big{font-weight:700;font-size:17px;border-width:2.5px}
 .why{margin-top:10px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 13px;font-size:14.5px;line-height:1.45}
+.card.aitop{border:2px solid var(--acc);background:var(--acc-soft);margin-bottom:12px}
 .card.warn{border-color:var(--warn);background:var(--warn-soft);color:var(--ink)}
 .srow{padding:9px 0;border-bottom:1px solid var(--line)}.srow:last-child{border:0}.srow .q{font-weight:600;font-size:15px}.srow .a{color:var(--ok);font-size:14.5px;font-weight:600;margin-top:2px}
 .spin{width:38px;height:38px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--acc);margin:0 auto;animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
@@ -398,6 +399,7 @@ function home(){
   show(`
   <div class="row" style="margin-bottom:12px"><button class="grow title" data-act="decks"><h1>${esc(SRC)} <span class="mute" style="font-size:16px">▾</span></h1><p class="mute small">${ALL.length} ta savol · testni almashtirish yoki yangi fayl yuklash</p></button>
     <button class="x" data-act="settings" aria-label="Sozlamalar">⚙</button></div>
+  ${aiTopCard()}
   <div class="card">
     <div class="hero"><div class="ring" style="--p:${pct}"><div>${pct}%</div></div>
       <div class="grow"><b>${c.s} / ${pl.length} savol mustahkam</b>
@@ -642,9 +644,28 @@ function aiTools(){
   </div>
   <p class="mute small" style="margin:12px 2px">${own?'Har bir amal internet va kirish kodini talab qiladi. Natija shu qurilmada saqlanadi.':'IK-509 uchun AI tahlili ilovaga oldindan biriktirilgan.'} «Nega shu javob?» tugmasi mashq paytida javobdan keyin chiqadi. AI javob kalitini o‘zgartirmaydi.</p>`);
 }
+function aiDone(){return [!aiMissing().length,!!(SECT[0]&&SECT[0].topic),!!DECKAI.pairs,!!DECKAI.issues]}
+function aiTopCard(){                               // yangi yuklangan testda bosh sahifa tepasida chiqadi
+  if(CFG.deck==='builtin')return '';
+  const d=aiDone(),n=d.filter(Boolean).length;if(n===4)return '';
+  return `<div class="card aitop"><b>✨ Bu testni AI bilan tahlil qilish</b>
+    <p class="small" style="margin:4px 0 12px">${n?n+' / 4 qismi tayyor. Qolganini ham bajaring: ':''}ilmoqlar, mavzular, o‘xshash savollar va javob kalitini tekshirish. Bir necha daqiqa oladi, internet va kirish kodi kerak.</p>
+    <div class="row"><button class="btn sm" data-act="aiall">${n?'Davom ettirish':'Hammasini boshlash'}</button><button class="btn sm ghost" data-act="aitools">Alohida tanlash</button></div></div>`;
+}
+async function aiAll(){                             // to‘rtta tahlilni ketma-ket bajaradi; xato bo‘lsa to‘xtaydi
+  if(CFG.deck==='builtin')return;
+  const deck=CFG.deck;
+  if(aiMissing().length&&!(await aiRun(true)))return;
+  for(const [i,t] of [[1,'topics'],[2,'pairs'],[3,'audit']]){
+    if(CFG.deck!==deck)return;
+    if(aiDone()[i])continue;
+    if(!(await deckAi(t,true)))return;
+  }
+  toast('AI tahlili to‘liq tayyor ✨');home();
+}
 function busy(title,msg){show('<div class="qhead"><h2>'+esc(title)+'</h2></div><div class="card" style="text-align:center;padding:28px 16px"><div class="spin"></div><p class="mute" style="margin-top:14px">'+esc(msg)+'</p></div>')}
 const DECKTASK={topics:['Mavzularga ajratish',aiTools],pairs:['O‘xshash savollarni topish',pairsView],audit:['Javob kalitini tekshirish',check]};
-async function deckAi(task){
+async function deckAi(task,chain){
   if(CFG.deck==='builtin')return toast('IK-509 uchun bu tahlil allaqachon biriktirilgan');
   const deck=CFG.deck,[title,after]=DECKTASK[task];
   if(!getCode())return;
@@ -658,6 +679,7 @@ async function deckAi(task){
     if(!LS.set('ik_ai_'+deck,ai))throw new Error('Qurilma xotirasi to‘ldi.');
     if(task==='topics'){CFG.block=0;saveCfg()}
     if(CFG.deck===deck)await loadDeck(deck);
+    if(chain)return true;
     toast('Tayyor ✨');after();
   }catch(e){toast(e.message);after()}
 }
@@ -668,7 +690,7 @@ function aiView(){
     <p class="mute small">${esc(r.msg||'Sahifani yopmang. To‘xtatsangiz, tayyor bo‘lgan qismi saqlanib qoladi.')}</p></div>
   <div class="foot"><div><button class="btn ghost" data-act="aistop">${r.stopped?'Bosh sahifa':'To‘xtatish'}</button></div></div>`);
 }
-async function aiRun(){
+async function aiRun(chain){
   let code=LS.get('ik_code','');
   if(!code){code=(prompt('AI tahlili uchun kirish kodini kiriting:')||'').trim();if(!code)return}
   const deck=CFG.deck,todo=aiMissing(),ai=LS.get('ik_ai_'+deck,{})||{};
@@ -696,7 +718,8 @@ async function aiRun(){
   if(CFG.deck===deck)await loadDeck(deck);
   if(AIRUN!==r)return;
   if(r.stopped&&r.msg)return aiView();
-  AIRUN=null;toast(r.stopped?'Tahlil to‘xtatildi':'AI tahlili tayyor ✨');home();
+  AIRUN=null;if(chain&&!r.stopped)return true;
+  toast(r.stopped?'Tahlil to‘xtatildi':'AI tahlili tayyor ✨');home();
 }
 function decks(){
   stopTimer();S=null;
@@ -742,6 +765,7 @@ const ACT={
   ai(){aiRun()},
   filecheck:check,aitools:aiTools,pairs:pairsView,sheet:sheetView,
   deckai(v){deckAi(v)},
+  aiall(){aiAll()},
   print(){window.print()},
   async explain(v){
     const q=BYID[v];if(!q||EX[v])return;
