@@ -1,97 +1,107 @@
-# Uy shartnomasi tekshiruvchisi
+# Ishonchli Shartnoma
 
 Yangi qurilayotgan uydan xonadon sotib olish shartnomasini imzolashdan oldin
-tekshirib beradigan Telegram bot. Xaridor shartnomani yuboradi, bot xavfli
-bandlarni iqtibos bilan koʻrsatadi va quruvchidan nimani soʻrashni aytadi.
+tekshirib beradigan Telegram Mini App va bot (`@ishonchli_shartnomabot`).
+Xaridor shartnomani yuklaydi, ilova xavfli bandlarni iqtibos va amaldagi qonun
+moddasi bilan koʻrsatadi, quruvchidan nimani soʻrashni aytadi va kutilayotgan
+qonun kuchga kirsa nima oʻzgarishini prognoz qiladi.
 
-Tekshiruv roʻyxati (`data/checklist.json`, 12 band) Raqobat qoʻmitasining
-132 ta quruvchi shartnomasi boʻyicha 2026-yil 6-noyabrdagi tahliliga asoslangan.
+Manzil: `https://uy-shartnoma-bot.encrypster.workers.dev` (Cloudflare Workers).
 
-## Cloudflare'da ishga tushirish (tavsiya etiladi)
+## Tuzilishi
 
-`worker/` papkasida botning Cloudflare Workers uchun yozilgan nusxasi bor. Unga
-alohida hosting ham, Anthropic kaliti ham kerak emas: model Cloudflare Workers AI
-dan olinadi (`@cf/zai-org/glm-4.7-flash`, bepul tarifda kuniga 10 000 "neuron").
+| Qism | Fayl |
+|---|---|
+| Tekshiruv roʻyxati (12 band) | `data/checklist.json` |
+| Qonunlar bazasi: amaldagi va kutilayotgan | `data/laws.json` |
+| Worker: bot, API, tahlil | `worker/src/index.js` |
+| Mini App sahifasi | `worker/src/app.html` |
+| Namuna natija (ilovadagi "Namuna" tugmasi) | `worker/src/demo.json` |
+| Sinov shartnomalari: nuqsonli va adolatli | `samples/` |
+| Python nusxasi (Render yoki oʻz server uchun) | `shartnoma/` |
 
-Bot joylangan: `https://uy-shartnoma-bot.encrypster.workers.dev`, Telegram
-webhook shu manzilga ulangan. Kod oʻzgargach qayta joylash:
+## Tahlil qanday ishlaydi
+
+1. Fayl matnga aylantiriladi (PDF, DOCX, TXT; Cloudflare `toMarkdown`).
+2. Pasport, JSHSHIR, telefon, karta, hisob raqam va email yashiriladi.
+3. Ikki soʻrov parallel ketadi: tekshiruv roʻyxati boʻyicha tahlil va
+   kutilayotgan qonun boʻyicha prognoz.
+4. Model keltirgan har bir iqtibos shartnoma matnidan qidiriladi; topilmasa
+   ogohlantirish chiqadi.
+5. Kod biladigan narsalar modelga qoldirilmaydi: shartnoma tili harflarga qarab
+   aniqlanadi; "bunday shart yoʻq" javobi shart yoʻqligi yaxshi boʻlgan
+   bandlarda (masalan, pul ushlab qolish) muammo sanalmaydi; prognozdagi
+   "imkoniyat/xavf" belgisi bazadan olinadi.
+6. Huquqiy asos modeldan emas, `data/laws.json` dan olinadi.
+
+### Qaysi model
+
+- `ANTHROPIC_API_KEY` maxfiy qiymati boʻlsa — Claude (`claude-opus-5-5`,
+  `CLAUDE_MODEL` oʻzgaruvchisi bilan almashtirsa boʻladi).
+- Boʻlmasa — Cloudflare Workers AI: tahlil Llama 3.3 70B da, prognoz
+  GLM 4.7 Flash da. Bepul tarifda kuniga 10 000 "neuron", bu taxminan 25 ta
+  tekshiruv.
+
+Bepul modellar ikki namuna shartnomada oʻlchangan (2026-11-15):
+
+| Model | Nuqsonli namuna (11 muammo) | Adolatli namuna (0 muammo) |
+|---|---|---|
+| Llama 3.3 70B | 11/11, 11/11 | 1 ta soxta ogohlantirish |
+| GPT-OSS 120B | 8/11, 11/11 | 1 ta soxta ogohlantirish |
+| GLM 4.7 Flash | 10/11, 6/11 | 3 ta soxta ogohlantirish |
+| Nemotron 3 120B | 6/11, 7/11 | oʻlchanmagan |
+
+Koddagi tuzatishlar bilan Llama jonli sinovda nuqsonli namunada 11/11,
+adolatli namunada 0 ta soxta ogohlantirish berdi. Claude yoʻli faqat soxta
+javoblar bilan sinalgan; haqiqiy kalit bilan jonli sinov qilinmagan.
+
+## Qonunlar bazasi
+
+`data/laws.json` dagi amaldagi moddalar (PQ-4732 va uning Nizomi, Isteʼmolchilar
+huquqlarini himoya qilish toʻgʻrisidagi Qonun, Fuqarolik kodeksi) lex.uz dan
+soʻzma-soʻz olingan. Qaysi modda qaysi bandga tegishli ekanini va sodda izohlarni
+yurist koʻrib chiqmagan.
+
+Kutilayotgan qonun (Uy-joylarni ulushli qurish toʻgʻrisida) 2026-yil
+10-noyabrda Qonunchilik palatasida qabul qilingan; Senat va Prezident
+bosqichida. Rasmiy matni eʼlon qilinmagani uchun qoidalar OAV xabari asosida
+berilgan. Qonun imzolangach `laws.json` ni rasmiy matn bilan yangilash kerak.
+
+## Joylash va sinash
 
 ```bash
 cd worker
 npm install
+npm test                                   # 19 ta test, tarmoqsiz
 CLOUDFLARE_API_TOKEN=... npx wrangler deploy
 ```
 
-Bot tokeni Worker'da `TELEGRAM_BOT_TOKEN` nomli maxfiy qiymat sifatida saqlanadi
-(`npx wrangler secret put TELEGRAM_BOT_TOKEN`). Token almashsa, yangisini qoʻyib,
-`/setup` manzilini bir marta oching.
+Maxfiy qiymatlar (Cloudflare: Worker → Settings → Variables and Secrets):
 
-KV ombori (`uy-shartnoma-bot`) hisobda yaratilgan va `wrangler.jsonc` ga yozilgan.
+- `TELEGRAM_BOT_TOKEN` — majburiy. Almashtirilsa, `/setup` manzilini bir marta
+  oching: webhook va botdagi "Tekshirish" menyu tugmasi qayta oʻrnatiladi.
+- `ANTHROPIC_API_KEY` — ixtiyoriy, platform.claude.com dan.
 
-Python nusxasidan farqlari:
+Sahifa Worker toʻplamining ichida beriladi (statik fayl sifatida emas).
 
-- Rasm va skanerlangan PDF oʻqilmaydi; faqat matnli PDF, DOCX, TXT va yozib
-  yuborilgan matn.
-- Model ochiq va bepul. Namuna shartnomada 26 soniyada 12 banddan 10 tasini
-  toʻgʻri baholadi (kafolat boʻyicha ikki bandni "aniqlanmadi" dedi). Haqiqiy
-  shartnomalarda sifatni tekshirish kerak. Modelning "oʻylash" rejimi ataylab
-  oʻchirilgan: yoqilsa javob 100 soniyaga choʻziladi va JSON buziladi.
-  Modelni `wrangler.jsonc` dagi `MODEL` orqali almashtirsa boʻladi.
-- Bepul tarifda har soʻrovga 10 ms protsessor vaqti beriladi; juda uzun
-  shartnomada yetmasligi mumkin.
+## Cheklovlar
 
-Testlar: `cd worker && npm test`.
+- Rasm va skanerlangan PDF oʻqilmaydi.
+- Bepul tarifda har soʻrovga 10 ms protsessor vaqti; juda uzun shartnomada
+  yetmasligi mumkin. Tahlil 40–55 soniya oladi.
+- Fayllar tashqi AI xizmatiga yuboriladi; shaxsga doir maʼlumotlar
+  qonunchiligiga mosligini yurist tasdiqlashi kerak.
+- Yuridik maslahat xizmatlari reyestri (VMQ 675-son) bunday ilovaga
+  taalluqlimi, aniqlanmagan.
+- Toʻlov ulanmagan; faqat kunlik limit bor (`DAILY_LIMIT`, hozir 5).
 
-## Python nusxasi (Render yoki oʻz serveringiz uchun)
+## Python nusxasi
 
-### Ishga tushirish
+`shartnoma/` papkasida botning Claude bilan ishlaydigan Python nusxasi bor
+(polling yoki webhook, `Dockerfile`, `render.yaml`). U Mini App va prognozni
+oʻz ichiga olmaydi.
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-
-export ANTHROPIC_API_KEY=...      # console.anthropic.com
-export TELEGRAM_BOT_TOKEN=...     # @BotFather
-
-# Bitta faylni terminalda tekshirish
-.venv/bin/python -m shartnoma.cli samples/namuna_shartnoma.txt
-
-# Botni ishga tushirish
-.venv/bin/python -m shartnoma.bot
-
-# Testlar (API kalitisiz ishlaydi)
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m pytest -q
 ```
-
-## Qanday ishlaydi
-
-1. `extract.py` fayldan matn oladi (PDF, DOCX, TXT). Rasm va skanerlangan PDF
-   modelga fayl sifatida yuboriladi.
-2. `redact.py` matndagi pasport, JSHSHIR, telefon, karta, hisob raqam va
-   emailni yashiradi.
-3. `analyzer.py` matnni tekshiruv roʻyxati bilan birga Claude modeliga yuboradi
-   va har bir band boʻyicha tuzilgan javob oladi.
-4. Model keltirgan har bir iqtibos shartnoma matnidan qidiriladi. Topilmasa,
-   hisobotda ogohlantirish chiqadi — bu toʻqilgan iqtiboslardan himoya.
-5. `report.py` natijani Telegram xabarlariga aylantiradi.
-
-Bot ataylab qonun moddalarini aytmaydi: roʻyxatdagi `legal_basis` maydonlari
-yurist tomonidan tasdiqlanmagan (`legal_verified: false`).
-
-## Hali qilinmagan ishlar
-
-- **Haqiqiy model bilan sinov.** Kod API kalitisiz, soxta javoblar bilan
-  sinalgan. Birinchi ish — namuna va 20–30 ta haqiqiy shartnomada tekshirish.
-- **Yurist tekshiruvi.** Har bir band uchun huquqiy asosni yurist toʻldirishi
-  va tasdiqlashi kerak. Ulushli qurilish toʻgʻrisidagi yangi qonun 2026-yil
-  10-noyabrda Qonunchilik palatasida qabul qilingan, Senat va Prezident
-  bosqichida; kuchga kirgach roʻyxatni yangilash kerak.
-- **Shaxsiy maʼlumotlar.** Fayllar xorijdagi API ga yuboriladi. Bu shaxsga doir
-  maʼlumotlar toʻgʻrisidagi qonun talablariga mosligini yurist bilan aniqlang.
-  Rasm va skanerlarda maʼlumot yashirilmaydi.
-- **Yuridik maqom.** Yuridik maslahat xizmatlari reyestri (VMQ 675-son) bunday
-  botga taalluqlimi, aniqlanmagan.
-- **Toʻlov.** Hozircha faqat kunlik limit bor (`DAILY_LIMIT`), toʻlov ulanmagan.
-- **Holat xotirada.** Limit hisobi bot qayta ishga tushsa nolga tushadi.
-- **Koʻp sahifali rasm.** Har bir rasm alohida tekshiriladi; toʻliq shartnoma
-  uchun bitta PDF kerak.

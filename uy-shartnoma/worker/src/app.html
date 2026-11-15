@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ishonchli Shartnoma</title>
+<meta name="description" content="Yangi uy shartnomasini imzolashdan oldin tekshiring">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root {
+  --bg: #F4F1EA; --surface: #FFFFFF; --ink: #14211E; --muted: #5E6B67; --line: #E3DED2;
+  --brand: #0B6B58; --brand-soft: #E2F0EC; --on-brand: #FFFFFF;
+  --danger: #B93A2B; --danger-soft: #FBEAE6; --warn: #9A6412; --warn-soft: #FBF1DC;
+  --ok: #2B7349; --ok-soft: #E4F2E9; --quote: #F7F5EF;
+  --radius: 16px; --shadow: 0 1px 2px rgba(20,33,30,.06), 0 6px 20px rgba(20,33,30,.05);
+}
+:root[data-theme="dark"] {
+  --bg: #0F1715; --surface: #18231F; --ink: #ECF1EE; --muted: #9DAAA5; --line: #2A3732;
+  --brand: #46C3A4; --brand-soft: #1B3A33; --on-brand: #06231C;
+  --danger: #F0826F; --danger-soft: #3A211D; --warn: #E5B25D; --warn-soft: #382D17;
+  --ok: #6FCF97; --ok-soft: #1B3325; --quote: #131D1A;
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+main { max-width: 640px; margin: 0 auto; padding: 0 16px 24px; }
+h1, h2, h3, p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: var(--brand); }
+
+.top { display: flex; align-items: center; gap: 12px; padding: 18px 0 14px; }
+.logo { width: 44px; height: 44px; flex: none; }
+.brand-name { font-size: 19px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+.brand-tag { font-size: 13px; color: var(--muted); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.stack > * + * { margin-top: 12px; }
+.title { font-size: 22px; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; }
+.lead { color: var(--muted); font-size: 15px; }
+.section-title { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 22px 4px 8px; }
+
+.drop { display: block; border: 1.5px dashed var(--brand); border-radius: var(--radius); background: var(--brand-soft); padding: 22px 16px; text-align: center; cursor: pointer; }
+.drop strong { display: block; font-size: 16px; }
+.drop span { font-size: 13px; color: var(--muted); }
+.drop.has-file { border-style: solid; }
+.drop input { display: none; }
+textarea { width: 100%; min-height: 150px; resize: vertical; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); padding: 12px; font: inherit; font-size: 15px; }
+textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; border: 0; border-radius: 14px; background: var(--brand); color: var(--on-brand); font-weight: 650; font-size: 16px; padding: 0 16px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--line); font-weight: 600; }
+.btn.small { min-height: 40px; font-size: 14px; width: auto; border-radius: 10px; }
+.link-btn { background: none; border: 0; padding: 6px 0; color: var(--brand); font-size: 14px; font-weight: 600; }
+
+.points { list-style: none; margin: 0; padding: 0; font-size: 14px; color: var(--muted); }
+.points li { padding-left: 22px; position: relative; }
+.points li + li { margin-top: 6px; }
+.points li::before { content: ""; position: absolute; left: 4px; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); }
+
+.alert { border-radius: 12px; padding: 12px 14px; font-size: 14px; background: var(--danger-soft); color: var(--danger); }
+.note { font-size: 13px; color: var(--muted); }
+
+.loading { text-align: center; padding: 34px 16px; }
+.spinner { width: 42px; height: 42px; margin: 0 auto 14px; border-radius: 50%; border: 4px solid var(--brand-soft); border-top-color: var(--brand); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
+.counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.count { border-radius: 12px; padding: 10px 6px; text-align: center; }
+.count b { display: block; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.count span { font-size: 12px; }
+.count.bad { background: var(--danger-soft); color: var(--danger); }
+.count.unclear { background: var(--warn-soft); color: var(--warn); }
+.count.good { background: var(--ok-soft); color: var(--ok); }
+
+.finding { border-left: 4px solid var(--line); }
+.finding.yuqori { border-left-color: var(--danger); }
+.finding.orta, .finding.past { border-left-color: var(--warn); }
+.finding h3 { font-size: 16px; line-height: 1.3; }
+.pill { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 650; }
+.pill.yuqori, .pill.xavf { background: var(--danger-soft); color: var(--danger); }
+.pill.orta, .pill.past { background: var(--warn-soft); color: var(--warn); }
+.pill.imkoniyat, .pill.done { background: var(--ok-soft); color: var(--ok); }
+.pill.wait { background: var(--warn-soft); color: var(--warn); }
+blockquote { margin: 0; padding: 10px 12px; background: var(--quote); border-radius: 10px; font-size: 14px; border-left: 3px solid var(--line); white-space: pre-line; overflow-wrap: anywhere; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.ask { background: var(--brand-soft); border-radius: 12px; padding: 12px; font-size: 15px; }
+.ask .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--brand); list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: " ▾"; }
+details[open] summary::after { content: " ▴"; }
+.law { margin-top: 10px; font-size: 14px; }
+.law .ref { font-weight: 650; }
+.plain-list { list-style: none; margin: 0; padding: 0; font-size: 15px; }
+.plain-list li { padding: 8px 0; }
+.plain-list li + li { border-top: 1px solid var(--line); }
+
+.steps { list-style: none; margin: 0; padding: 0; }
+.steps li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; font-size: 15px; }
+.steps li + li { border-top: 1px solid var(--line); }
+
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
+.tab { background: none; border: 0; padding: 9px 4px 10px; font-size: 12px; font-weight: 600; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.tab svg { width: 24px; height: 24px; }
+.tab[aria-selected="true"] { color: var(--brand); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 3 6 9.5v12.6c0 11 7.4 19.4 18 22.9 10.600-3.5 18-11.900 18-22.900V9.500z" fill="var(--brand)"/>
+      <rect x="15" y="13" width="18" height="22" rx="3" fill="var(--on-brand)"/>
+      <path d="M19 19h10M19 23.500h6" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+      <path d="m19.500 29 3.200 3.200 6.300-6.700" fill="none" stroke="var(--brand)" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <div class="brand-name">Ishonchli Shartnoma</div>
+      <div class="brand-tag">Imzolashdan oldin tekshiring</div>
+    </div>
+  </header>
+
+  <section id="view-check" class="stack"></section>
+  <section id="view-laws" class="stack" hidden></section>
+  <section id="view-upcoming" class="stack" hidden></section>
+</main>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" data-tab="check" aria-selected="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 5.500v5.300c0 4.600 3 8.200 7 9.700 4-1.500 7-5.100 7-9.700V5.500z"/><path d="m9.200 12 2 2 3.600-3.800"/></svg>
+    Tekshiruv
+  </button>
+  <button class="tab" role="tab" data-tab="laws" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 9h6M9 13h6"/></svg>
+    Qonunlar
+  </button>
+  <button class="tab" role="tab" data-tab="upcoming" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.500"/><path d="M12 7.500V12l3 2"/></svg>
+    Kutilmoqda
+  </button>
+</nav>
+
+<script>
+(() => {
+  const tg = window.Telegram?.WebApp;
+  const initData = tg?.initData || "";
+  const MAX_BYTES = 4 * 1024 * 1024;
+  const MIN_CHARS = 800;
+  const SEVERITY = { yuqori: "Yuqori xavf", orta: "Oʻrta xavf", past: "Past xavf" };
+
+  function applyTheme() {
+    const dark = tg?.colorScheme ? tg.colorScheme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+    try { tg?.setHeaderColor?.(bg); tg?.setBackgroundColor?.(bg); } catch {}
+  }
+  if (tg) { tg.ready(); tg.expand(); tg.onEvent?.("themeChanged", applyTheme); }
+  applyTheme();
+
+  /** DOM yordamchisi: matn har doim textContent orqali qoʻyiladi. */
+  function h(tag, attrs, ...children) {
+    const el = document.createElement(tag);
+    for (const [key, value] of Object.entries(attrs || {})) {
+      if (value === false || value == null) continue;
+      if (key === "class") el.className = value;
+      else if (key.startsWith("on")) el.addEventListener(key.slice(2), value);
+      else el.setAttribute(key, value === true ? "" : value);
+    }
+    for (const child of children.flat()) {
+      if (child == null || child === false) continue;
+      el.append(child.nodeType ? child : document.createTextNode(String(child)));
+    }
+    return el;
+  }
+  const haptic = (kind) => { try { tg?.HapticFeedback?.notificationOccurred(kind); } catch {} };
+  function openLink(url) { if (tg?.openLink) tg.openLink(url); else window.open(url, "_blank", "noopener"); }
+  function extLink(url, label) {
+    return h("a", { href: url, onclick: (e) => { e.preventDefault(); openLink(url); } }, label);
+  }
+  async function copy(text, button) {
+    try { await navigator.clipboard.writeText(text); } catch {
+      const area = h("textarea", {}); area.value = text; document.body.append(area); area.select();
+      document.execCommand("copy"); area.remove();
+    }
+    const old = button.textContent; button.textContent = "Nusxalandi"; haptic("success");
+    setTimeout(() => { button.textContent = old; }, 1600);
+  }
+
+  // ---------- Tablar ----------
+  const views = { check: document.getElementById("view-check"), laws: document.getElementById("view-laws"), upcoming: document.getElementById("view-upcoming") };
+  let lawsPromise = null;
+  function loadLaws() {
+    lawsPromise ||= fetch("/api/laws").then((r) => { if (!r.ok) throw new Error(); return r.json(); });
+    lawsPromise.catch(() => { lawsPromise = null; });
+    return lawsPromise;
+  }
+  function showTab(name) {
+    for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
+    document.querySelectorAll(".tab").forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.tab === name)));
+    window.scrollTo(0, 0);
+    if (name === "laws") renderLaws();
+    if (name === "upcoming") renderUpcoming();
+  }
+  document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => showTab(tab.dataset.tab)));
+
+  // ---------- Tekshiruv ----------
+  const state = { file: null, mode: "file" };
+
+  function renderForm(error) {
+    const fileInput = h("input", { type: "file", accept: ".pdf,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    const dropTitle = h("strong", {}, state.file ? state.file.name : "Shartnoma faylini tanlang");
+    const dropHint = h("span", {}, state.file ? `${(state.file.size / 1024).toFixed(0)} KB · almashtirish uchun bosing` : "PDF, DOCX yoki TXT · 4 MB gacha");
+    const drop = h("label", { class: "drop" + (state.file ? " has-file" : "") }, fileInput, dropTitle, dropHint);
+    const area = h("textarea", { placeholder: "Shartnoma matnini shu yerga qoʻying…", "aria-label": "Shartnoma matni" });
+    const submit = h("button", { class: "btn", disabled: true }, "Tekshirish");
+    const toggle = h("button", { class: "link-btn" });
+
+    function sync() {
+      const fileMode = state.mode === "file";
+      drop.hidden = !fileMode; area.hidden = fileMode;
+      toggle.textContent = fileMode ? "Yoki matnni qoʻlda kiriting" : "Yoki fayl yuklang";
+      submit.disabled = fileMode ? !state.file : area.value.trim().length < MIN_CHARS;
+    }
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      if (file.size > MAX_BYTES) { state.file = null; renderForm("Fayl 4 MB dan katta. Kichikroq fayl tanlang yoki matnni qoʻlda kiriting."); return; }
+      state.file = file; renderForm();
+    });
+    area.addEventListener("input", sync);
+    toggle.addEventListener("click", () => { state.mode = state.mode === "file" ? "text" : "file"; sync(); });
+    submit.addEventListener("click", () => {
+      if (state.mode === "file") run({ body: state.file, headers: { "x-file-name": encodeURIComponent(state.file.name) } });
+      else run({ body: area.value, headers: { "content-type": "text/plain; charset=utf-8" } });
+    });
+
+    views.check.replaceChildren(...[
+      h("div", { class: "stack" },
+        h("h1", { class: "title" }, "Uy shartnomangizda nima yashiringan?"),
+        h("p", { class: "lead" }, "Quruvchi bergan shartnomani yuklang. 12 ta xavfli bandni tekshirib, quruvchidan nimani soʻrashni aytamiz.")),
+      error ? h("div", { class: "alert", role: "alert" }, error) : null,
+      h("div", { class: "card stack" }, drop, area, toggle, submit),
+      h("ul", { class: "points" },
+        h("li", {}, "Har bir xulosa shartnomadan olingan iqtibos va amaldagi qonun moddasi bilan koʻrsatiladi."),
+        h("li", {}, "Pasport, JSHSHIR, telefon va karta raqamlari tahlildan oldin yashiriladi; fayl saqlanmaydi."),
+        h("li", {}, "Rasm va skanerlangan fayllar hozircha oʻqilmaydi.")),
+      h("button", { class: "btn ghost", onclick: demo }, "Namuna natijani koʻrish"),
+      h("p", { class: "note" }, "Bu dastlabki avtomatik tekshiruv, huquqiy maslahat emas."),
+    ].filter(Boolean));
+    sync();
+  }
+
+  function renderLoading() {
+    views.check.replaceChildren(h("div", { class: "card loading", role: "status" },
+      h("div", { class: "spinner" }),
+      h("h2", { style: "font-size:18px" }, "Shartnoma oʻqilmoqda…"),
+      h("p", { class: "lead" }, "Odatda yarim daqiqa, uzun shartnomada bir daqiqagacha. Ilovani yopmang.")));
+    window.scrollTo(0, 0);
+  }
+
+  async function run({ body, headers }) {
+    if (!initData) { renderForm("Tekshirish uchun ilovani Telegram ichida oching."); return; }
+    renderLoading();
+    try {
+      const response = await fetch("/api/check", { method: "POST", headers: { ...headers, "x-telegram-init-data": initData }, body });
+      const data = await response.json();
+      if (!data.ok) { haptic("error"); renderForm(data.error || "Xato yuz berdi. Qayta urinib koʻring."); return; }
+      haptic("success"); renderReport(data.report, false);
+    } catch {
+      haptic("error"); renderForm("Aloqa uzildi. Internetni tekshirib, qayta urinib koʻring.");
+    }
+  }
+
+  async function demo() {
+    renderLoading();
+    try {
+      const response = await fetch("/demo.json");
+      renderReport(await response.json(), true);
+    } catch { renderForm("Namunani yuklab boʻlmadi."); }
+  }
+
+  function lawBlock(law) {
+    return h("div", { class: "law stack" },
+      h("div", {}, h("span", { class: "ref" }, law.ref), " — ", law.plain),
+      h("blockquote", {}, law.text),
+      law.url ? h("div", {}, extLink(law.url, "lex.uz da ochish")) : null);
+  }
+
+  function findingCard(f) {
+    const askButton = h("button", { class: "btn ghost small" }, "Nusxalash");
+    askButton.addEventListener("click", () => copy(f.ask, askButton));
+    return h("article", { class: `card finding stack ${f.severity}` },
+      h("div", {}, h("span", { class: `pill ${f.severity}` }, SEVERITY[f.severity])),
+      h("h3", {}, f.title),
+      f.status === "yoq" ? h("p", { class: "note" }, "Shartnomada bu masala umuman yozilmagan.") : null,
+      f.quote ? h("blockquote", {}, f.quote) : null,
+      f.unverified ? h("div", { class: "alert" }, "Bu iqtibos matndan topilmadi — bandni shartnomadan oʻzingiz tekshiring.") : null,
+      f.explanation ? h("p", {}, f.explanation) : null,
+      h("div", {}, h("div", { class: "label" }, "Nega muhim"), h("p", { style: "font-size:15px" }, f.why)),
+      h("div", { class: "ask" }, h("div", { class: "row" }, h("div", { class: "label" }, "Quruvchidan soʻrang"), askButton), f.ask),
+      f.laws.length ? h("details", {}, h("summary", {}, `Huquqiy asos (${f.laws.length})`), f.laws.map(lawBlock)) : null);
+  }
+
+  function renderReport(report, isDemo) {
+    const again = h("button", { class: "btn ghost", onclick: () => { state.file = null; renderForm(); window.scrollTo(0, 0); } }, isDemo ? "Oʻz shartnomamni tekshirish" : "Boshqa shartnomani tekshirish");
+    if (!report.isHousingContract) {
+      views.check.replaceChildren(
+        h("div", { class: "card stack" }, h("h2", { class: "title" }, "Bu uy-joy shartnomasiga oʻxshamaydi"), report.summary ? h("p", { class: "lead" }, report.summary) : null),
+        again);
+      return;
+    }
+    const bad = report.findings.filter((f) => f.group === "bad");
+    const unclear = report.findings.filter((f) => f.group === "unclear");
+    const good = report.findings.filter((f) => f.group === "good");
+    const nodes = [];
+    if (isDemo) nodes.push(h("div", { class: "card note" }, "Bu namuna: ataylab nuqsonli qilib tuzilgan toʻqima shartnoma boʻyicha haqiqiy tahlil natijasi."));
+    nodes.push(h("div", { class: "card stack" },
+      h("h2", { class: "title" }, bad.length ? `${bad.length} ta bandga eʼtibor bering` : "Jiddiy muammo topilmadi"),
+      h("div", { class: "counts" },
+        h("div", { class: "count bad" }, h("b", {}, report.counts.bad), h("span", {}, "Muammoli")),
+        h("div", { class: "count unclear" }, h("b", {}, report.counts.unclear), h("span", {}, "Aniqlanmadi")),
+        h("div", { class: "count good" }, h("b", {}, report.counts.good), h("span", {}, "Joyida"))),
+      report.summary ? h("p", { class: "lead" }, report.summary) : null));
+
+    if (bad.length) {
+      const allButton = h("button", { class: "btn" }, "Barcha savollarni nusxalash");
+      allButton.addEventListener("click", () => copy(bad.map((f, n) => `${n + 1}. ${f.ask}`).join("\n"), allButton));
+      nodes.push(h("h2", { class: "section-title" }, "Muammoli bandlar"), ...bad.map(findingCard), allButton);
+    }
+    if (report.otherRisks.length) {
+      nodes.push(h("h2", { class: "section-title" }, "Qoʻshimcha xavfli bandlar"),
+        ...report.otherRisks.map((risk) => h("article", { class: "card finding orta stack" },
+          h("blockquote", {}, risk.quote),
+          risk.unverified ? h("div", { class: "alert" }, "Bu iqtibos matndan topilmadi — oʻzingiz tekshiring.") : null,
+          h("p", {}, risk.explanation))));
+    }
+    if (unclear.length) {
+      nodes.push(h("h2", { class: "section-title" }, "Aniqlab boʻlmadi — oʻzingiz tekshiring"),
+        h("div", { class: "card" }, h("ul", { class: "plain-list" }, unclear.map((f) => h("li", {}, h("b", {}, f.title), h("div", { class: "note" }, f.explanation))))));
+    }
+    if (good.length) {
+      nodes.push(h("h2", { class: "section-title" }, "Joyida"),
+        h("div", { class: "card" }, h("ul", { class: "plain-list" }, good.map((f) => h("li", {}, "✓ ", f.title)))));
+    }
+    if (report.forecast.length) {
+      nodes.push(h("h2", { class: "section-title" }, "Yangi qonun kuchga kirsa"),
+        h("div", { class: "card note" }, h("b", {}, report.upcoming.title), ". ", report.upcoming.status),
+        ...report.forecast.map((f) => h("article", { class: "card stack" },
+          h("div", {}, h("span", { class: `pill ${f.kind}` }, f.kind === "imkoniyat" ? "Imkoniyat" : "Xavf")),
+          h("h3", { style: "font-size:16px" }, f.title),
+          h("p", {}, f.explanation),
+          h("details", {}, h("summary", {}, "Qoida matni"), h("p", { class: "law" }, f.rule)))),
+        h("p", { class: "note" }, report.upcoming.sourceNote));
+    }
+    const notes = [];
+    if (report.hidden) notes.push(`Tahlildan oldin ${report.hidden} ta shaxsiy maʼlumot yashirildi.`);
+    notes.push(report.disclaimer);
+    nodes.push(h("p", { class: "note", style: "margin-top:18px" }, notes.join(" ")), again);
+    views.check.replaceChildren(...nodes);
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- Qonunlar ----------
+  async function renderLaws() {
+    if (views.laws.dataset.ready) return;
+    views.laws.replaceChildren(h("div", { class: "card loading" }, h("div", { class: "spinner" })));
+    try {
+      const laws = await loadLaws();
+      views.laws.replaceChildren(
+        h("div", { class: "stack" }, h("h1", { class: "title" }, "Amaldagi qonunlar"),
+          h("p", { class: "lead" }, "Tekshiruv shu hujjatlarning quyidagi qoidalariga tayanadi. Matnlar lex.uz dan soʻzma-soʻz olingan.")),
+        ...laws.current.map((doc) => h("div", { class: "card stack" },
+          h("h2", { style: "font-size:17px;line-height:1.3" }, doc.title),
+          h("p", { class: "note" }, `${doc.doc} · ${doc.edition}`),
+          ...doc.provisions.map((p) => h("details", {}, h("summary", {}, p.plain), h("div", { class: "law stack" }, h("div", { class: "ref" }, p.ref), h("blockquote", {}, p.text)))),
+          h("div", {}, extLink(doc.url, "Toʻliq matn — lex.uz")))),
+        h("p", { class: "note" }, `${laws.note} Yangilangan: ${laws.updated}.`));
+      views.laws.dataset.ready = "1";
+    } catch {
+      views.laws.replaceChildren(h("div", { class: "alert" }, "Qonunlarni yuklab boʻlmadi. Qayta urinib koʻring."));
+    }
+  }
+
+  async function renderUpcoming() {
+    if (views.upcoming.dataset.ready) return;
+    views.upcoming.replaceChildren(h("div", { class: "card loading" }, h("div", { class: "spinner" })));
+    try {
+      const laws = await loadLaws();
+      const nodes = [h("div", { class: "stack" }, h("h1", { class: "title" }, "Kutilayotgan qonunlar"),
+        h("p", { class: "lead" }, "Hali kuchga kirmagan, lekin uy xaridorlariga taʼsir qiladigan oʻzgarishlar."))];
+      for (const law of laws.upcoming) {
+        nodes.push(h("div", { class: "card stack" },
+          h("h2", { style: "font-size:17px;line-height:1.3" }, law.title),
+          h("ol", { class: "steps" }, law.stages.map((stage) => h("li", {}, h("span", {}, stage.name, stage.date ? ` · ${stage.date}` : ""),
+            h("span", { class: `pill ${stage.done ? "done" : "wait"}` }, stage.done ? "Boʻldi" : "Kutilmoqda")))),
+          h("p", { class: "note" }, law.status)));
+        nodes.push(h("h2", { class: "section-title" }, "Nima oʻzgaradi"));
+        for (const p of law.provisions) {
+          nodes.push(h("article", { class: "card stack" },
+            h("div", {}, h("span", { class: `pill ${p.kind}` }, p.kind === "imkoniyat" ? "Imkoniyat" : "Xavf")),
+            h("h3", { style: "font-size:16px" }, p.title), h("p", { style: "font-size:15px" }, p.text),
+            p.source ? h("div", { class: "note" }, extLink(p.source, "Manba")) : null));
+        }
+        nodes.push(h("p", { class: "note" }, law.source_note, " ", extLink(law.source, "Manba: Gazeta.uz")));
+      }
+      views.upcoming.replaceChildren(...nodes);
+      views.upcoming.dataset.ready = "1";
+    } catch {
+      views.upcoming.replaceChildren(h("div", { class: "alert" }, "Maʼlumotni yuklab boʻlmadi. Qayta urinib koʻring."));
+    }
+  }
+
+  renderForm();
+})();
+</script>
+</body>
+</html>

@@ -53,7 +53,7 @@ def full_analysis(**overrides):
 
 def test_checklist_is_consistent():
     assert len(ITEMS) >= 10
-    assert all(not i.legal_verified for i in ITEMS)
+    assert any(i.law_refs for i in ITEMS)
 
 
 def test_redact_hides_personal_data():

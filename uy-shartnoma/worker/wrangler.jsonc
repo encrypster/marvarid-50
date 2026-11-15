@@ -1,16 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "uy-shartnoma-bot",
-  "main": "src/index.js",
+  "main": "src/entry.js",
+  "rules": [{ "type": "Text", "globs": ["**/*.html"], "fallthrough": false }],
   "compatibility_date": "2026-11-01",
   "ai": { "binding": "AI" },
   "kv_namespaces": [
     { "binding": "KV", "id": "7ab5ddb43deb434895ce96a144e795e1" }
   ],
   "vars": {
-    "DAILY_LIMIT": "3",
-    "MODEL": "@cf/zai-org/glm-4.7-flash"
+    "DAILY_LIMIT": "5",
+    "MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
   },
   "observability": { "enabled": true }
-  // TELEGRAM_BOT_TOKEN maxfiy qiymat: Cloudflare sahifasida Settings -> Variables and Secrets.
+  // Maxfiy qiymatlar (Cloudflare sahifasida Settings -> Variables and Secrets):
+  //   TELEGRAM_BOT_TOKEN — majburiy
+  //   ANTHROPIC_API_KEY  — boʻlsa tahlil Claude'da ishlaydi, boʻlmasa bepul Workers AI modelida
 }

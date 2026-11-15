@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "data" / "checklist.json"
@@ -20,8 +20,8 @@ class CheckItem:
     ask_developer: str
     stat: str
     source: str
-    legal_basis: str | None
-    legal_verified: bool
+    law_refs: list[str] = field(default_factory=list)
+    absence_ok: bool = False
 
 
 def load_checklist(path: Path = DEFAULT_PATH) -> list[CheckItem]:

@@ -1,6 +1,6 @@
 {
   "version": "2026-11-14",
-  "note": "Bandlar Raqobat qoʻmitasining 132 ta quruvchi shartnomasi boʻyicha 2026-yil 6-noyabrdagi tahliliga asoslangan. legal_basis maydonlari hali yurist tomonidan tasdiqlanmagan: bot foydalanuvchiga modda raqamini aytmaydi.",
+  "note": "Bandlar Raqobat qoʻmitasining 132 ta quruvchi shartnomasi boʻyicha 2026-yil 6-noyabrdagi tahliliga asoslangan. law_refs — data/laws.json dagi moddalarga havola; matnlar lex.uz dan olingan, tanlov yurist koʻrigidan oʻtmagan.",
   "items": [
     {
       "id": "topshirish_muddati",
@@ -11,8 +11,12 @@
       "ask_developer": "Xonadon qaysi sanada topshiriladi? Shu sanani shartnomaga kun, oy, yil bilan yozib bering.",
       "stat": "Tekshirilgan shartnomalarning 33,3 foizida aniq muddat yoʻq.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "nizom_18",
+        "ihq_19_muddat",
+        "ihq_19_voz"
+      ],
+      "absence_ok": false
     },
     {
       "id": "kechikish_penyasi",
@@ -23,8 +27,13 @@
       "ask_developer": "Topshirish kechiksa, har bir kun uchun qancha penya toʻlaysiz? Buni shartnomaga kiriting.",
       "stat": "Shartnomalarning 50,8 foizida quruvchi uchun penya belgilanmagan.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "nizom_18",
+        "fk_260",
+        "fk_261",
+        "nizom_41"
+      ],
+      "absence_ok": false
     },
     {
       "id": "pul_qaytarish_muddati",
@@ -35,8 +44,11 @@
       "ask_developer": "Shartnoma bekor boʻlsa, pulimni necha kun ichida toʻliq qaytarasiz?",
       "stat": "Shartnomalarning 77,3 foizida qaytarish muddati yoʻq yoki toʻlov muddatiga mos emas.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "ihq_21_1",
+        "fk_360"
+      ],
+      "absence_ok": false
     },
     {
       "id": "pul_ushlab_qolish",
@@ -47,8 +59,11 @@
       "ask_developer": "Shartnomadan chiqsam, qancha pul ushlab qolinadi va nima asosda?",
       "stat": "Qoʻmita toʻlangan mablagʻning 4–15 foizi ushlab qolinadigan shartnomalarni aniqlagan.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "ihq_21_3",
+        "fk_360"
+      ],
+      "absence_ok": true
     },
     {
       "id": "qayta_sotilgach_qaytarish",
@@ -59,8 +74,11 @@
       "ask_developer": "Pulni qaytarish uyning qayta sotilishiga bogʻliqmi? Bu shartni olib tashlab, aniq muddat yozing.",
       "stat": "Qoʻmita bunday shartlarni huquqni cheklovchi deb qayd etgan.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "ihq_21_1",
+        "fk_360"
+      ],
+      "absence_ok": true
     },
     {
       "id": "kafolat_muddati",
@@ -71,8 +89,10 @@
       "ask_developer": "Xonadon va umumiy muhandislik tizimlariga necha yil kafolat berasiz?",
       "stat": "Shartnomalarning 63,6 foizida kafolat muddati koʻrsatilmagan.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "nizom_18"
+      ],
+      "absence_ok": false
     },
     {
       "id": "nuqsonlarni_bartaraf_etish",
@@ -83,8 +103,11 @@
       "ask_developer": "Kafolat davrida nuqson chiqsa, kim, qancha muddatda va kimning hisobidan tuzatadi?",
       "stat": "Shartnomalarning 54,5 foizida bunday majburiyat nazarda tutilmagan.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "ihq_19_nuqson",
+        "nizom_18"
+      ],
+      "absence_ok": false
     },
     {
       "id": "narxni_bir_tomonlama_oshirish",
@@ -95,8 +118,12 @@
       "ask_developer": "Shartnoma narxi qatʼiymi? Qaysi holatlarda oʻzgarishi mumkin?",
       "stat": "Qoʻmita narxni bir tomonlama oshirishga ruxsat beruvchi bandlarni aniqlagan.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "fk_237",
+        "fk_356",
+        "nizom_24"
+      ],
+      "absence_ok": true
     },
     {
       "id": "xaridorga_jarimalar",
@@ -107,8 +134,11 @@
       "ask_developer": "Mening kechikishim va sizning kechikishingiz uchun penya nega teng emas? Tenglashtiring.",
       "stat": "Shartnomalarning 59,1 foizi faqat quruvchi manfaatini koʻzlab tuzilgan.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "fk_326",
+        "fk_360"
+      ],
+      "absence_ok": true
     },
     {
       "id": "shartnoma_tili",
@@ -119,8 +149,8 @@
       "ask_developer": "Shartnomaning oʻzbek tilidagi nusxasini bering.",
       "stat": "Shartnomalarning 30,3 foizi davlat tilida emas, rus tilida tuzilgan.",
       "source": "https://www.gazeta.uz/oz/2026/11/06/qurilish-tashkilotlari/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [],
+      "absence_ok": false
     },
     {
       "id": "royxatdan_otkazish",
@@ -131,8 +161,12 @@
       "ask_developer": "Shartnoma qayerda roʻyxatdan oʻtkaziladi va roʻyxat raqamini qachon olaman?",
       "stat": "Amaldagi tartibga koʻra quruvchi mablagʻni shartnoma roʻyxatdan oʻtgandan keyin jalb qilishi mumkin; yangi qonun loyihasi notarial tasdiq va davlat roʻyxatini majburiy qiladi (2026-yil 10-noyabr holatiga Senat va Prezident bosqichida).",
       "source": "https://www.gazeta.uz/oz/2026/11/10/shared-equity-construction/",
-      "legal_basis": "PQ-4732 (27.05.2020), https://lex.uz/docs/-4831129 — aniq band yurist tomonidan tasdiqlanishi kerak",
-      "legal_verified": false
+      "law_refs": [
+        "pq_2",
+        "nizom_4",
+        "nizom_16"
+      ],
+      "absence_ok": false
     },
     {
       "id": "maydon_farqi",
@@ -143,8 +177,11 @@
       "ask_developer": "Maydon kam chiqsa, farqni qaysi narxda va qancha muddatda qaytarasiz?",
       "stat": "Yangi qonun loyihasida maydonning taxminan 5 foizgacha farq qilishiga ruxsat beruvchi qoida chiqarib tashlangan (hali kuchga kirmagan).",
       "source": "https://www.gazeta.uz/oz/2026/11/10/shared-equity-construction/",
-      "legal_basis": null,
-      "legal_verified": false
+      "law_refs": [
+        "nizom_18",
+        "ihq_21_3"
+      ],
+      "absence_ok": false
     }
   ]
 }

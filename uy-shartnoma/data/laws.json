@@ -1,0 +1,256 @@
+{
+  "updated": "2026-11-15",
+  "note": "Amaldagi hujjatlar matni lex.uz dan soʻzma-soʻz olingan. Tanlov va sodda izohlar yurist koʻrigidan oʻtmagan.",
+  "current": [
+    {
+      "id": "pq4732",
+      "title": "Koʻp kvartirali uylarni ulush kiritish asosida qurish tartibi",
+      "doc": "Prezidentning 2020-yil 27-maydagi PQ-4732-son qarori va u bilan tasdiqlangan Nizom",
+      "edition": "2023-yil 29-avgust tahriri",
+      "url": "https://lex.uz/docs/-4831129",
+      "provisions": [
+        {
+          "id": "pq_1a",
+          "ref": "PQ-4732, 1-band «a» kichik bandi",
+          "text": "a) koʻp kvartirali uylarni ulush kiritish asosida qurish uchun jismoniy va yuridik shaxslar (keyingi oʻrinlarda — ulushdorlar)ning mablagʻlarini jalb qilish faqat yuridik shaxs maqomiga ega boʻlgan hamda Ulush kiritish asosida qurish uchun mablagʻlarni jalb etuvchi quruvchilarning elektron roʻyxati (keyingi oʻrinlarda — Elektron roʻyxat)ga kiritilgan quruvchilar tomonidan amalga oshirilishi mumkin;",
+          "plain": "Ulushdorlardan pulni faqat Elektron roʻyxatga kiritilgan yuridik shaxs — quruvchi yigʻishi mumkin."
+        },
+        {
+          "id": "pq_2",
+          "ref": "PQ-4732, 2-band",
+          "text": "ulush kiritish asosida qurilish uchun mablagʻlarni jalb qilish quruvchi va ulushdor oʻrtasida tuzilgan va belgilangan tartibda hisobga qoʻyilgan shartnomaga muvofiq amalga oshiriladi;",
+          "plain": "Pul faqat belgilangan tartibda hisobga qoʻyilgan shartnoma asosida olinadi."
+        },
+        {
+          "id": "pq_2_hisob",
+          "ref": "PQ-4732, 2-band",
+          "text": "ulushdorlarning mablagʻlari quruvchining har bir qurilish majmuasi boʻyicha alohida bank hisobvaragʻida jamlanadi hamda faqat quruvchi va ulushdorlar oʻrtasida tuzilgan shartnomalar boʻyicha majburiyatlarni bajarish maqsadlari uchun yoʻnaltiriladi;",
+          "plain": "Ulushdorlar puli har bir majmua uchun alohida bank hisobvaragʻida turadi va faqat shu qurilishga sarflanadi."
+        },
+        {
+          "id": "nizom_4",
+          "ref": "Nizom, 4-band",
+          "text": "4. Quruvchi mazkur Nizom talablariga muvofiq ulushdorlar bilan tuzilgan shartnomalar hisobga qoʻyilganidan soʻng qurilish obyektini qurish uchun ulushdorlarning mablagʻlarini jalb qilishga haqli.",
+          "plain": "Quruvchi pulni shartnoma hisobga qoʻyilgandan keyingina jalb qilishi mumkin."
+        },
+        {
+          "id": "nizom_16",
+          "ref": "Nizom, 16-band",
+          "text": "16. Elektron roʻyxatga kiritilmagan quruvchilar ulush kiritish asosida qurilishga ulushdorlarning mablagʻlarini jalb qilish huquqiga ega emas.",
+          "plain": "Roʻyxatda yoʻq quruvchi ulushdorlardan pul olishga haqli emas."
+        },
+        {
+          "id": "nizom_18",
+          "ref": "Nizom, 18-band",
+          "text": "18. Shartnomada quyidagilar aks ettirilgan boʻlishi lozim:\nqurilish majmuasi va qurilish obyekti haqidagi maʼlumotlar (manzili, joylashgan joyi, kvartira raqami va boshqalar);\nqurilish obyekti maydoni va qiymati;\nqurilish obyektini ulushdorga topshirish muddati va holati;\nulushdor tomonidan kiritiladigan summa miqdori;\noʻzaro hisob-kitoblar tartibi;\nqurilish-montaj ishlarining grafigi;\ntomonlarning huquqlari, majburiyatlari va javobgarligi;\nshartnoma boʻyicha talablar huquqlarini oʻtkazish tartibi;\nqurilish obyekti ekspluatatsiyasining kafolat muddati (ikki yildan kam boʻlmasligi lozim);\nnizolarni hal qilish tartibi va taraflar oʻrtasida kelishilgan qonun hujjatlariga muvofiq boshqa shartlar.",
+          "plain": "Shartnomada albatta boʻlishi kerak boʻlgan shartlar roʻyxati: maydon va qiymat, topshirish muddati, toʻlov tartibi, ishlar grafigi, tomonlar javobgarligi, kamida ikki yillik kafolat."
+        },
+        {
+          "id": "nizom_24",
+          "ref": "Nizom, 24-band",
+          "text": "24. Shartnomaga kiritilgan oʻzgartirish va qoʻshimchalar belgilangan tartibda hisobga qoʻyilishi kerak. Bunda qoʻshimcha yigʻim undirilmaydi.",
+          "plain": "Shartnomaga kiritilgan har qanday oʻzgartirish ham hisobga qoʻyilishi kerak, buning uchun qoʻshimcha yigʻim olinmaydi."
+        },
+        {
+          "id": "nizom_38",
+          "ref": "Nizom, 38-band",
+          "text": "38. Ulushdor:\nqurilish obyektidagi qurilish ishlari holati bilan tanishishga;\nshartnoma shartlari bajarilishi boʻyicha quruvchidan yozma shaklda maʼlumot talab qilishga;\nqurilish obyektlarini qurish ustidan texnik, shuningdek, mablagʻlarning maqsadli ishlatilishi ustidan nazoratni qonun hujjatlarida belgilangan tartibda yuridik shaxslarni yoki mutaxassislarni jalb qilish orqali amalga oshirishga haqli.",
+          "plain": "Ulushdor qurilish holati bilan tanishish va quruvchidan yozma maʼlumot talab qilish huquqiga ega."
+        },
+        {
+          "id": "nizom_41",
+          "ref": "Nizom, 41-band",
+          "text": "41. Quyidagi holatlarda qurilish majmuasi vakolatli davlat organi tomonidan muammoli obyektlar toifasiga kiritiladi:\nqurilish va shaharsozlik norma va qoidalarining qoʻpol ravishda buzilishi;\nqurilish obyektlarini foydalanishga topshirish muddati asossiz ravishda olti oydan ortiq muddatga kechikishi;\nquruvchi tomonidan ulushdorlarga qurilish obyektlarini topshirish majburiyati buzilishi yoki uni bankrot deb topilishi.",
+          "plain": "Topshirish asossiz olti oydan ortiq kechiksa, majmua «muammoli obyekt» deb topiladi."
+        }
+      ]
+    },
+    {
+      "id": "ihq",
+      "title": "Isteʼmolchilarning huquqlarini himoya qilish toʻgʻrisidagi Qonun",
+      "doc": "1996-yil 26-apreldagi 221-I-son Qonun",
+      "edition": "amaldagi tahrir",
+      "url": "https://lex.uz/docs/-4704",
+      "provisions": [
+        {
+          "id": "ihq_19_muddat",
+          "ref": "Qonun, 19-modda, 1-qism",
+          "text": "Ijrochi ayrim turdagi ishlarni bajarish (xizmatlar koʻrsatish) qoidalarida yoki shartnomada belgilangan muddatda, hajmda va sifatda ishni bajarishi (xizmat koʻrsatishi) shart.",
+          "plain": "Ijrochi ishni shartnomada belgilangan muddatda, hajmda va sifatda bajarishi shart."
+        },
+        {
+          "id": "ihq_19_voz",
+          "ref": "Qonun, 19-modda, 3-qism",
+          "text": "Agar ijrochi shartnomani ijro etishga oʻz vaqtida kirishmasa yoki shartnomaning belgilangan muddatda bajarilmasligi ayon boʻlib qolsa, isteʼmolchi ishni bajarish, xizmat koʻrsatish toʻgʻrisidagi shartnomadan voz kechishga va yetkazilgan zararning qoplanishini talab qilishga haqli.",
+          "plain": "Muddat buzilishi ayon boʻlsa, isteʼmolchi shartnomadan voz kechib, zararni qoplashni talab qila oladi."
+        },
+        {
+          "id": "ihq_19_nuqson",
+          "ref": "Qonun, 19-modda, 4-qism",
+          "text": "Agar ijrochi shartnoma shartlarini ish (xizmat)ni yomonlashtirgan darajada jiddiy buzgan boʻlsa, yoxud ishda (xizmatda) boshqa jiddiy nuqsonlarga yoʻl qoʻygan boʻlsa, isteʼmolchi oʻz xohishiga koʻra nuqsonlar bepul bartaraf etilishini, bajarilgan ish (koʻrsatilgan xizmat) bahosi nuqsonlarga mutanosib ravishda kamaytirilishini, xuddi shunday sifatli shu xildagi materialdan boshqa buyum bepul tayyorlab berilishini yoxud ishning takroran bajarilishini yoinki shartnoma bekor qilinib, koʻrilgan zarar toʻliq qoplanishini talab qilishga haqli.",
+          "plain": "Jiddiy nuqson boʻlsa, isteʼmolchi uni bepul tuzatishni, narxni kamaytirishni yoki shartnomani bekor qilib, zararni toʻliq qoplashni talab qila oladi."
+        },
+        {
+          "id": "ihq_21_1",
+          "ref": "Qonun, 21-modda, 1-qism",
+          "text": "Shartnomaning isteʼmolchi huquqlarini cheklab qoʻyadigan va qonunchilikka zid boʻlgan talablari haqiqiy emas deb hisoblanadi. Agar ularni qoʻllanishi natijasida isteʼmolchiga zarar yetkazilgan boʻlsa, bu zarar ishlab chiqaruvchi (sotuvchi, ijrochi) tomonidan qoplanishi lozim.",
+          "plain": "Isteʼmolchi huquqini cheklaydigan va qonunga zid shartnoma shartlari haqiqiy emas."
+        },
+        {
+          "id": "ihq_21_3",
+          "ref": "Qonun, 21-modda, 3-qism",
+          "text": "Shartnomaga isteʼmolchilarning qonunchilikda nazarda tutilgan huquqlarini kamsitadigan shartlarni kiritish, shuningdek ularga qonunchilikda belgilangan imtiyozlar va afzalliklarni bermaslik taqiqlanadi.",
+          "plain": "Shartnomaga isteʼmolchi huquqlarini kamsitadigan shartlarni kiritish taqiqlanadi."
+        }
+      ]
+    },
+    {
+      "id": "fk",
+      "title": "Fuqarolik kodeksi (birinchi qism)",
+      "doc": "1995-yil 21-dekabrdagi Kodeks",
+      "edition": "amaldagi tahrir",
+      "url": "https://lex.uz/docs/-111189",
+      "provisions": [
+        {
+          "id": "fk_237",
+          "ref": "Fuqarolik kodeksi, 237-modda",
+          "text": "Majburiyatni bajarishdan bir tomonlama bosh tortish va shartnoma shartlarini bir tomonlama oʻzgartirishga yoʻl qoʻyilmaydi, qonunchilikda yoki shartnomada nazarda tutilgan hollar bundan mustasno.",
+          "plain": "Shartnoma shartlarini bir tomonlama oʻzgartirib boʻlmaydi — faqat qonunda yoki shartnomaning oʻzida yozilgan hollarda."
+        },
+        {
+          "id": "fk_260",
+          "ref": "Fuqarolik kodeksi, 260-modda, 1–2-qismlar",
+          "text": "Qonunchilik yoki shartnoma bilan belgilangan, qarzdor majburiyatni bajarmagan yoki lozim darajada bajarmagan taqdirda kreditorga toʻlashi shart boʻlgan pul summasi neustoyka hisoblanadi.\nNeustoyka toʻlash haqidagi talab boʻyicha kreditor oʻziga yetkazilgan zararni isbotlashga majbur emas.",
+          "plain": "Neustoyka (jarima, penya) qonunda yoki shartnomada belgilanadi; uni talab qilish uchun zararni isbotlash shart emas."
+        },
+        {
+          "id": "fk_261",
+          "ref": "Fuqarolik kodeksi, 261-modda, 3-qism",
+          "text": "Qarzdor majburiyatlarning bajarilishini kechiktirib yuborganida toʻlaydigan va oʻtkazib yuborilgan muddatning har bir kuni uchun majburiyatning bajarilmagan qismiga nisbatan foiz bilan hisoblanadigan neustoyka penya hisoblanadi.",
+          "plain": "Penya — kechikishning har bir kuni uchun foizda hisoblanadigan toʻlov."
+        },
+        {
+          "id": "fk_326",
+          "ref": "Fuqarolik kodeksi, 326-modda, 1-qism",
+          "text": "Agar toʻlanishi lozim boʻlgan neustoyka kreditorning majburiyatini buzish oqibatlariga nomutanosibligi koʻrinib tursa, sud neustoykani kamaytirishga haqli. Bunda qarzdor majburiyatni qay darajada bajarganligi, majburiyatda ishtirok etayotgan taraflarning mulkiy ahvoli, shuningdek kreditorning manfaatlari eʼtiborga olinishi kerak.",
+          "plain": "Neustoyka buzilish oqibatiga nomutanosib boʻlsa, sud uni kamaytirishi mumkin."
+        },
+        {
+          "id": "fk_356",
+          "ref": "Fuqarolik kodeksi, 356-modda, 3-qism",
+          "text": "Shartnoma tuzilganidan keyin bahoni oʻzgartirishga qonunchilik yoki shartnomada nazarda tutilgan hollarda va shartlarda yoʻl qoʻyiladi.",
+          "plain": "Shartnoma tuzilgach narxni faqat qonunda yoki shartnomada yozilgan hollarda oʻzgartirish mumkin."
+        },
+        {
+          "id": "fk_360",
+          "ref": "Fuqarolik kodeksi, 360-modda, 2-qism",
+          "text": "Agar qoʻshilish shartnomasi garchi qonunchilikka zid boʻlmasa-da, biroq qoʻshiluvchi tarafni odatda ana shunday turdagi shartnomalar asosida beriladigan huquqlardan mahrum etsa, ikkinchi tarafning majburiyatlarni buzganlik uchun javobgarligini istisno etsa yoki cheklasa yoxud unda qoʻshilgan taraf uchun ochiqdan-ochiq ogʻir boʻlgan, bu tarafda shartnoma shartlarini belgilashda qatnashish imkoniyati boʻlganida u oʻzining manfaatlarini koʻzlab qabul qilmaydigan shartlar yozib qoʻyilgan boʻlsa, shartnomaga qoʻshilgan taraf shartnomani bekor qilishni yoki oʻzgartirishni talab qilishga haqli.",
+          "plain": "Quruvchi tayyorlagan standart shartnoma sizga ochiqdan-ochiq ogʻir shartlar yuklasa, uni oʻzgartirish yoki bekor qilishni talab qila olasiz."
+        },
+        {
+          "id": "fk_382",
+          "ref": "Fuqarolik kodeksi, 382-modda, 1-qism",
+          "text": "Agar ushbu Kodeksda, boshqa qonunlarda yoki shartnomada boshqacha tartib nazarda tutilgan boʻlmasa, shartnoma taraflarning kelishuviga muvofiq oʻzgartirilishi va bekor qilinishi mumkin.",
+          "plain": "Shartnoma odatda faqat ikki tomon kelishuvi bilan oʻzgartiriladi yoki bekor qilinadi."
+        }
+      ]
+    }
+  ],
+  "upcoming": [
+    {
+      "id": "ulushli_qurilish_qonuni",
+      "title": "Uy-joylarni ulushli qurish toʻgʻrisidagi Qonun",
+      "status": "Qonunchilik palatasi 2026-yil 10-noyabrda ikkinchi va uchinchi oʻqishda qabul qildi. Senat maʼqullashi va Prezident imzolashi kutilmoqda; kuchga kirish sanasi eʼlon qilinmagan.",
+      "stages": [
+        {
+          "name": "Qonunchilik palatasi qabul qildi",
+          "done": true,
+          "date": "2026-11-10"
+        },
+        {
+          "name": "Senat maʼqullashi",
+          "done": false
+        },
+        {
+          "name": "Prezident imzosi",
+          "done": false
+        },
+        {
+          "name": "Kuchga kirishi",
+          "done": false
+        }
+      ],
+      "source": "https://www.gazeta.uz/oz/2026/11/10/shared-equity-construction/",
+      "source_note": "Qonunning rasmiy matni hali eʼlon qilinmagan. Qoidalar Gazeta.uz ning 2026-yil 10-noyabrdagi xabari asosida berilgan va yakuniy matnda oʻzgarishi mumkin.",
+      "provisions": [
+        {
+          "id": "yq_amal_doirasi",
+          "title": "Faqat yangi qurilishlarga tatbiq etiladi",
+          "text": "Yangi talablar qonun kuchga kirgandan keyin qurilishga ruxsatnoma olingan obyektlarga tatbiq etiladi. Avval boshlangan qurilishlar qamrovga kirmaydi.",
+          "kind": "xavf"
+        },
+        {
+          "id": "yq_eskrou",
+          "title": "Pul eskrou hisobvaragʻida saqlanadi",
+          "text": "Ulushdorlarning pullari quruvchiga emas, bankdagi maxsus eskrou hisobvaragʻiga tushadi. Quruvchi pulni faqat qurilish tugab, uy xaridorga topshirilgandan keyin oladi; bank qurilish jarayonini nazorat qiladi.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_notarial",
+          "title": "Notarial tasdiq va davlat roʻyxati",
+          "text": "Ulushli ishtirok etish shartnomalari notarial tasdiqlanishi va davlat roʻyxatidan oʻtkazilishi shart. Bu talab shartnomaga kiritiladigan oʻzgartish va qoʻshimchalarga ham tegishli.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_quruvchi_talablar",
+          "title": "Quruvchiga qoʻyiladigan talablar",
+          "text": "Quruvchi Yagona axborot tizimida roʻyxatdan oʻtishi, vakolatli bank bilan bosh kelishuv tuzishi va loyiha deklaratsiyasini eʼlon qilishi kerak. Qurilish va koʻchmas mulk maʼlumotlari Yagona axborot tizimiga joylashtiriladi.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_moliya",
+          "title": "Bank loyihaviy moliyalashtirishi",
+          "text": "Qurilish qiymatining kamida 70 foizi bank loyihaviy moliyalashtirishi hisobidan amalga oshiriladi, quruvchining oʻz mablagʻi 30 foizdan oshmaydi.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_muammoli",
+          "title": "Kechikkan obyekt darhol «muammoli» deb topiladi",
+          "text": "Quruvchi topshirish muddatini buzsa, obyektni muammoli deb topish uchun qoʻshimcha olti oy kutish talab etilmaydi. Kamchiliklarni tuzatmasdan, faqat kompensatsiya toʻlab, obyektni muammoli obyektlar reyestridan chiqarib boʻlmaydi. Zarur hollarda quruvchi yoki bankni almashtirish mexanizmi nazarda tutilgan.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_maydon",
+          "title": "Maydon farqiga ruxsat bekor qilinadi",
+          "text": "Shartnomada koʻrsatilgan maydondan taxminan 5 foiz farq qilishga ruxsat beruvchi qoida qonun loyihasidan chiqarib tashlangan.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_qaytarish",
+          "title": "Noqonuniy yigʻilgan pulni foizi bilan qaytarish",
+          "text": "Quruvchi qonunchilik talablarini buzib mablagʻ jalb qilsa, ulushdor pulni qaytarishni va undan foydalangani uchun foizlar toʻlanishini talab qilishga haqli.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_jinoiy",
+          "title": "Jinoiy javobgarlik",
+          "text": "Jinoyat kodeksiga ulushdorlar mablagʻini noqonuniy jalb qilish uchun javobgarlik belgilovchi modda kiritilishi nazarda tutilgan; javobgarlik uchun moddiy zarar yetkazilishi shart emas.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_reklama",
+          "title": "Deklaratsiyasiz reklama taqiqlanadi",
+          "text": "Loyiha deklaratsiyasi roʻyxatdan oʻtkazilmagan boʻlsa, turar joy majmuasi va xonadonlarni reklama qilish taqiqlanadi.",
+          "kind": "imkoniyat"
+        },
+        {
+          "id": "yq_narx",
+          "title": "Uy-joy narxi oshishi mumkin",
+          "text": "Adliya vazirligi eskrou tizimi joriy etilgandan keyin uy-joy qiymati oshishi mumkinligini istisno qilmagan.",
+          "kind": "xavf",
+          "source": "https://www.uzdaily.uz/uz/adliya-vazirligi-eskrou-hisoblari-uy-joy-narxini-oshirishi-mumkinligini-bildirdi/"
+        }
+      ]
+    }
+  ]
+}
