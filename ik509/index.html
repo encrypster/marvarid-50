@@ -74,6 +74,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 mark{background:var(--hl);color:inherit;padding:0 3px;border-radius:4px;font-weight:750}
 div.opt{cursor:default}
 .opt.big{font-weight:700;font-size:17px;border-width:2.5px}
+.hook{margin-top:12px;background:var(--hl);border-radius:12px;padding:10px 13px;font-size:15px;line-height:1.4}
+.item .hook{margin-top:8px;font-size:13.5px;padding:7px 10px}
 .deck{display:flex;gap:8px;align-items:stretch;margin-top:8px}
 .deck .mode{padding:12px 14px}
 .deck.on .mode{border-color:var(--acc);border-width:2px}
@@ -144,7 +146,7 @@ const LS={
 const DAY=864e5;
 const IV=[0,5*6e4,30*6e4,4*36e5,DAY,2*DAY];      // qisqa muddatli tayyorgarlik: 5 daq, 30 daq, 4 soat, 1 kun, 2 kun
 const BLOCK=50;
-let ALL=[],BYID={},SRC='',BUILTIN=null;
+let ALL=[],BYID={},SRC='',BUILTIN=null,BUILTIN_AI=null;
 let DECKS=LS.get('ik_decks',[]);                  // yuklangan testlar: [{id,name,n}]
 let P=LS.get('ik_p',{});                          // id -> {b,due,ok,bad,last}
 let CFG=Object.assign({size:20,think:false,preview:true,block:0,deck:'builtin',exams:{}},LS.get('ik_cfg',{}));
@@ -186,7 +188,15 @@ function parse(text){
 const WORD=/([\p{L}\p{N}'‘’ʻʼ`´-]+)/u;
 function words(t){return t.split(WORD).filter((w,i)=>i%2).map(norm).filter(w=>w.length>=4&&!/^[\d-]+$/.test(w))}
 // Har bir savolni boshqalaridan ajratib turadigan 1-2 so‘z (ko‘z ilg‘aydigan "langar")
-function keywords(qs){
+function keywords(qs,ai){
+  if(ai)for(const q of qs){                              // AI tahlili bor: langar so‘zlar va ilmoq o‘shandan olinadi
+    const a=ai[q.id];if(!a)continue;
+    const ks=(a.k||[]).filter(k=>k&&q.q.includes(k)).sort((x,y)=>y.length-x.length);
+    if(ks.length){const re=new RegExp('('+ks.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')');
+      q.html=q.q.split(re).map((t,i)=>i%2?'<mark>'+esc(t)+'</mark>':esc(t)).join('')}
+    if(a.m)q.m=a.m;
+  }
+  qs=qs.filter(q=>!q.html);
   const df={};
   for(const q of qs){q._w=[...new Set(words(q.q))];for(const w of q._w)df[w]=(df[w]||0)+1}
   const lim=Math.max(3,qs.length*.03);
@@ -196,10 +206,10 @@ function keywords(qs){
     delete q._w;
   }
 }
-function setData(text,name){
+function setData(text,name,ai){
   const qs=parse(text);
   if(!qs.length)return false;
-  keywords(qs);
+  keywords(qs,ai);
   ALL=qs;BYID={};qs.forEach(q=>BYID[q.id]=q);SRC=name;
   if(CFG.block>Math.ceil(ALL.length/BLOCK))CFG.block=0;
   return true;
@@ -210,8 +220,9 @@ async function loadDeck(id){
     const d=DECKS.find(d=>d.id===id),t=d&&LS.get('ik_deck_'+id,null);
     if(t&&setData(t,d.name)){CFG.deck=id;saveCfg();return true}
   }
-  if(BUILTIN==null){try{const r=await fetch('questions.txt');if(r.ok)BUILTIN=await r.text()}catch(e){}}
-  if(BUILTIN&&setData(BUILTIN,'IK-509')){CFG.deck='builtin';saveCfg();return true}
+  if(BUILTIN==null){try{const r=await fetch('questions.txt');if(r.ok)BUILTIN=await r.text()}catch(e){}
+    try{const r=await fetch('questions.ai.json');if(r.ok)BUILTIN_AI=await r.json()}catch(e){}}
+  if(BUILTIN&&setData(BUILTIN,'IK-509',BUILTIN_AI)){CFG.deck='builtin';saveCfg();return true}
   return false;
 }
 function addDeck(name,text){
@@ -237,6 +248,7 @@ async function boot(){
 }
 
 /* ---------- helpers ---------- */
+const hook=q=>q.m?'<div class="hook">💡 '+esc(q.m)+'</div>':'';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -368,7 +380,7 @@ function renderQ(){
     <h2>${q.html}</h2></div>`;
   let foot='';
   if(c.view){
-    h+='<div class="opts">'+q.opts.map(o=>`<div class="opt ${o.c?'ok big':'dim'}"><span class="k">${o.c?'✓':''}</span><span>${esc(o.t)}</span></div>`).join('')+'</div>';
+    h+='<div class="opts">'+q.opts.map(o=>`<div class="opt ${o.c?'ok big':'dim'}"><span class="k">${o.c?'✓':''}</span><span>${esc(o.t)}</span></div>`).join('')+'</div>'+hook(q);
     if(view)foot=(S.pos?'<button class="btn ghost" data-act="prev" style="flex:.5">Orqaga</button>':'')+'<button class="btn" data-act="next">Keyingi</button>';
     else{h+='<p class="mute small" style="text-align:center;margin-top:14px">Sariq so‘z bilan yashil javobni suratga olgandek eslab qoling — birozdan keyin so‘raladi.</p>';
       foot='<button class="btn" data-act="next">Esda qoldi →</button>'}
@@ -377,7 +389,7 @@ function renderQ(){
       h+='<div class="think"><p class="mute">Javobni ko‘z oldingizga keltiring, keyin tekshiring.</p></div>';
       foot='<button class="btn" data-act="reveal">Javobni ko‘rsatish</button>';
     }else{
-      h+='<div class="reveal">'+q.opts.filter(o=>o.c).map(o=>'<div class="ans">✓ '+esc(o.t)+'</div>').join('')+'</div>';
+      h+='<div class="reveal">'+q.opts.filter(o=>o.c).map(o=>'<div class="ans">✓ '+esc(o.t)+'</div>').join('')+'</div>'+hook(q);
       foot='<button class="btn no" data-act="rate" data-v="0">Bilmadim</button><button class="btn yes" data-act="rate" data-v="1">Bildim</button>';
     }
   }else if(!c.shown){
@@ -394,7 +406,7 @@ function renderQ(){
     h+='</div>';
     if(c.answered){
       h+=c.right?'<div class="fb ok">To‘g‘ri! 👏</div>'
-        :'<div class="fb bad">Xato. Yashil javobga yaxshilab qarang — bu savol yana qaytadi.</div>';
+        :'<div class="fb bad">Xato. Yashil javobga yaxshilab qarang — bu savol yana qaytadi.</div>'+hook(q);
       foot='<button class="btn" data-act="next">Keyingi</button>';
     }else if(exam){
       foot=(S.pos?'<button class="btn ghost" data-act="prev" style="flex:.5">Orqaga</button>':'')+
@@ -433,7 +445,7 @@ function finish(){
     for(const m of missed){const q=BYID[m.id];
       h+='<div class="item"><div class="q">'+q.html+'</div>'+
         q.opts.filter(o=>o.c).map(o=>'<div class="a">✓ '+esc(o.t)+'</div>').join('')+
-        (m.sel||[]).filter(i=>!q.opts[i].c).map(i=>'<div class="w">'+esc(q.opts[i].t)+'</div>').join('')+'</div>'}
+        (m.sel||[]).filter(i=>!q.opts[i].c).map(i=>'<div class="w">'+esc(q.opts[i].t)+'</div>').join('')+hook(q)+'</div>'}
   }else h+='<p class="mute" style="text-align:center;margin-top:18px">Bitta ham xato yo‘q. Zo‘r! 🎉</p>';
   h+='<div class="foot"><div><button class="btn ghost" data-act="home">Bosh sahifa</button>'+
     (ids.length?'<button class="btn" data-act="retry">Xatolarni takrorlash</button>':'<button class="btn" data-act="learn">Yana mashq</button>')+'</div></div>';
@@ -461,7 +473,7 @@ function list(){
   const rows=pool().filter(q=>(BF.f==='a'||status(q.id)===BF.f)&&(!t||norm(q.q+' '+q.opts.map(o=>o.t).join(' ')).includes(t)));
   document.getElementById('list').innerHTML='<p class="mute small" style="margin:10px 2px 0">'+rows.length+' ta savol</p>'+
     rows.map(q=>'<div class="item"><div class="q"><span class="dot '+status(q.id)+'"></span>'+q.no+'. '+q.html+'</div>'+
-      q.opts.filter(o=>o.c).map(o=>'<div class="a">✓ '+esc(o.t)+'</div>').join('')+'</div>').join('');
+      q.opts.filter(o=>o.c).map(o=>'<div class="a">✓ '+esc(o.t)+'</div>').join('')+hook(q)+'</div>').join('');
 }
 
 function decks(){
