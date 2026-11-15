@@ -53,7 +53,7 @@ def full_analysis(**overrides):
 
 def test_checklist_is_consistent():
     assert len(ITEMS) >= 10
-    assert any(i.law_refs for i in ITEMS)
+    assert all(i.law_refs == [] for i in ITEMS)  # huquqiy asos endi jonli bazadan olinadi
 
 
 def test_redact_hides_personal_data():
