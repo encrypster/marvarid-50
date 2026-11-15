@@ -121,6 +121,10 @@ div.opt{cursor:default}
 .item .w{color:var(--bad);font-size:14px;margin-top:4px;text-decoration:line-through}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:var(--line);vertical-align:1px}
 .dot.l{background:var(--warn)}.dot.s{background:var(--ok)}.dot.e{background:var(--bad)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:40px;height:38px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14px;font-weight:600}
+.step input{width:64px;height:38px;text-align:center;font:inherit;font-weight:700;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:10px;-moz-appearance:textfield}
+.step input::-webkit-inner-spin-button{display:none}
 input[type=date]{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 input[type=search]{width:100%;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none}
 input[type=search]:focus{border-color:var(--acc)}
@@ -317,7 +321,7 @@ function start(mode,ids,extra){
   if(!ids.length){toast('Bu rejim uchun savol yo‘q');return}
   S=Object.assign({mode,queue:ids.slice(),pos:0,total:mode==='view'?ids.length:ids.filter(x=>x[1]!==':').length,done:0,first:{},conf:{},missed:[],answers:{},cur:null},extra||{});
   if(mode==='exam'){
-    S.left=ids.length*60;
+    S.left=S.left||ids.length*60;
     timer=setInterval(()=>{S.left--;const t=document.getElementById('timer');if(t)t.textContent=fmt(Math.max(S.left,0));if(S.left<=0)finish()},1000);
   }
   nextQ();
@@ -436,11 +440,15 @@ function finish(){
     for(const id of S.queue){const sel=S.answers[id]||[],ok=isRight(BYID[id],sel);grade(id,ok);if(ok)right++;else missed.push({id,sel})}
   }else{missed=S.missed;right=total-missed.length}
   const pct=Math.round(right/total*100),ids=missed.map(m=>m.id);
+  let byType='';
+  if(S.mode==='exam'){const t={},bad=new Set(ids);
+    for(const id of S.queue){const n=BYID[id].n;t[n]=t[n]||[0,0];t[n][1]++;if(!bad.has(id))t[n][0]++}
+    byType='<div class="stats" style="grid-template-columns:repeat('+Object.keys(t).length+',1fr)">'+Object.keys(t).sort((a,b)=>a-b).map(n=>'<div class="stat"><b>'+t[n][0]+' / '+t[n][1]+'</b><span>'+n+' javobli</span></div>').join('')+'</div>'}
   const title={learn:'Sessiya yakunlandi',errors:'Xatolar ustida ishlash yakunlandi',cards:'Kartochkalar yakunlandi',exam:'Imtihon natijasi'}[S.mode];
   const col=pct>=86?'var(--ok)':pct>=56?'var(--warn)':'var(--bad)';
   let h=`<div class="card" style="text-align:center;margin-top:8px"><p class="mute">${title}</p>
     <div class="big" style="color:${col};margin:10px 0 6px">${pct}%</div>
-    <p><b>${right}</b> / ${total} ${S.mode==='exam'?'to‘g‘ri':'birinchi urinishda to‘g‘ri'}</p></div>`;
+    <p><b>${right}</b> / ${total} ${S.mode==='exam'?'to‘g‘ri':'birinchi urinishda to‘g‘ri'}</p>${byType}</div>`;
   if(missed.length){
     h+='<h3>Eslab qolish kerak ('+missed.length+')</h3>';
     for(const m of missed){const q=BYID[m.id];
@@ -453,11 +461,35 @@ function finish(){
   S={retry:ids};show(h);
 }
 
+function examCfg(){                                 // imtihon tarkibi: har bir tur (to‘g‘ri javoblar soni) bo‘yicha nechta savol
+  const have={};pool().forEach(q=>have[q.n]=(have[q.n]||0)+1);
+  const key=CFG.deck+'|'+CFG.block;CFG.examCfg=CFG.examCfg||{};
+  let c=CFG.examCfg[key];
+  if(!c){const n=pool().length,tot=Math.min(50,n);c={counts:{},min:0,order:'mix'};
+    for(const k in have)c.counts[k]=Math.round(have[k]/n*tot);
+    c.min=Object.values(c.counts).reduce((a,b)=>a+b,0);CFG.examCfg[key]=c}
+  for(const k in c.counts)if(!have[k])delete c.counts[k];
+  for(const k in have)c.counts[k]=Math.max(0,Math.min(have[k],c.counts[k]|0));
+  return {have,c,total:Object.values(c.counts).reduce((a,b)=>a+b,0)};
+}
 function examSetup(){
-  const n=pool().length,opts=[25,50,100].filter(x=>x<n).concat([n]);
+  const {have,c,total}=examCfg();
   show(`<div class="qhead"><button class="x" data-act="home">←</button><h2>Imtihon</h2></div>
-  <div class="card"><p>Savollar tasodifiy tanlanadi, har biriga 1 daqiqa. To‘g‘ri javoblar faqat oxirida ko‘rsatiladi. Bir nechta to‘g‘ri javobli savolda hammasi to‘g‘ri belgilangandagina ball beriladi.</p></div>
-  <h3>Savollar soni</h3><div class="modes">${opts.map(x=>`<button class="mode" data-act="exam" data-v="${x}"><span class="ic">⏱</span><span><b>${x===n?'Hammasi — '+n:x} ta savol</b><span>${x} daqiqa</span></span></button>`).join('')}</div>`);
+  <div class="card"><p class="small mute">Haqiqiy imtihondagidek tarkibni belgilang: har bir turdan nechta savol tushishi va umumiy vaqt. Savollar har safar tasodifiy tanlanadi, to‘g‘ri javoblar faqat oxirida ko‘rsatiladi. Bir nechta to‘g‘ri javobli savolda hammasi to‘g‘ri belgilangandagina ball beriladi.</p></div>
+  <h3>Savollar tarkibi</h3>
+  <div class="card">${Object.keys(have).sort((a,b)=>a-b).map(k=>`<div class="set"><div><b>${k} ta to‘g‘ri javobli</b><p class="mute small">bazada ${have[k]} ta</p></div>
+    <div class="step"><button data-act="exstep" data-k="${k}" data-v="-5">−5</button><input type="number" inputmode="numeric" class="exn" data-k="${k}" min="0" max="${have[k]}" value="${c.counts[k]}"><button data-act="exstep" data-k="${k}" data-v="5">+5</button></div></div>`).join('')}
+    <div class="set"><div><b>Vaqt</b><p class="mute small">daqiqa</p></div>
+      <div class="step"><button data-act="exstep" data-k="min" data-v="-5">−5</button><input type="number" inputmode="numeric" class="exn" data-k="min" min="1" max="600" value="${c.min}"><button data-act="exstep" data-k="min" data-v="5">+5</button></div></div>
+    <div class="set"><div><b>Tartib</b><p class="mute small">Aralash yoki avval 1 javobli, keyin ko‘p javoblilar</p></div>
+      <div class="seg"><button class="${c.order==='mix'?'on':''}" data-act="exorder" data-v="mix">Aralash</button><button class="${c.order==='type'?'on':''}" data-act="exorder" data-v="type">Tur bo‘yicha</button></div></div>
+  </div>
+  <div class="foot"><div><button class="btn" data-act="exam"${total?'':' disabled'}>Boshlash — ${total} ta savol, ${c.min} daqiqa</button></div></div>`);
+}
+function exSet(k,v){
+  const {have,c}=examCfg();
+  if(k==='min')c.min=Math.max(1,Math.min(600,v|0));else c.counts[k]=Math.max(0,Math.min(have[k],v|0));
+  saveCfg();
 }
 
 let BF={q:'',f:'a'};
@@ -571,7 +603,12 @@ const ACT={
   learn(){start('learn',withPreview(pickLearn(CFG.size)))},
   errors(){start('errors',shuffle(pool().filter(q=>status(q.id)==='e')).slice(0,30).map(q=>q.id))},
   cards(){start('cards',pickLearn(CFG.size))},
-  exam(v){start('exam',shuffle(pool()).slice(0,+v).map(q=>q.id))},
+  exam(){
+    const {c}=examCfg(),pl=pool();let ids=[];
+    for(const k of Object.keys(c.counts).sort((a,b)=>a-b))ids=ids.concat(shuffle(pl.filter(q=>q.n===+k)).slice(0,c.counts[k]).map(q=>q.id));
+    start('exam',c.order==='mix'?shuffle(ids):ids,{left:c.min*60})},
+  exstep(v,b){const {c}=examCfg(),k=b.dataset.k;exSet(k,(k==='min'?c.min:c.counts[k])+ +v);examSetup()},
+  exorder(v){examCfg().c.order=v;saveCfg();examSetup()},
   retry(){start('errors',shuffle(S.retry))},
   quit(){if(S.mode==='exam'){if(confirm('Imtihonni yakunlab, natijani ko‘rasizmi?'))finish()}else if(S.mode==='view'||!S.pos&&!S.cur.answered||confirm('Sessiyadan chiqasizmi?'))home()},
   showopts(){S.cur.shown=true;renderQ()},
@@ -597,8 +634,8 @@ const ACT={
   reset(){if(confirm('Barcha natijalar o‘chirilsinmi?')){P={};DAYS={};NEWD={};LS.set('ik_p',P);LS.set('ik_days',DAYS);LS.set('ik_new',NEWD);toast('Natijalar o‘chirildi');home()}},
   async install(){if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;home()}
 };
-app.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v!==undefined?b.dataset.v:b.dataset.i)});
-app.addEventListener('change',e=>{if(e.target.id==='exam'){CFG.exams[CFG.deck]=e.target.value||'';saveCfg();toast('Test kuni saqlandi')}});
+app.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v!==undefined?b.dataset.v:b.dataset.i,b)});
+app.addEventListener('change',e=>{if(e.target.classList.contains('exn')){exSet(e.target.dataset.k,+e.target.value);return examSetup()}if(e.target.id==='exam'){CFG.exams[CFG.deck]=e.target.value||'';saveCfg();toast('Test kuni saqlandi')}});
 document.addEventListener('keydown',e=>{
   if(!S||!S.cur||e.target.tagName==='INPUT')return;
   if(e.key==='Enter'){const b=app.querySelector('.foot .btn:last-child:not([disabled])');if(b)b.click()}
