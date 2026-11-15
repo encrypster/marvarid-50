@@ -52,8 +52,9 @@ Bepul modellar ikki namuna shartnomada oʻlchangan (2026-11-15):
 | Nemotron 3 120B | 6/11, 7/11 | oʻlchanmagan |
 
 Koddagi tuzatishlar bilan Llama jonli sinovda nuqsonli namunada 11/11,
-adolatli namunada 0 ta soxta ogohlantirish berdi. Claude yoʻli faqat soxta
-javoblar bilan sinalgan; haqiqiy kalit bilan jonli sinov qilinmagan.
+adolatli namunada 0 ta soxta ogohlantirish berdi. Claude (Opus 5.5) jonli
+sinovda nuqsonli namunada 11/11, adolatli namunada 0 ta soxta ogohlantirish
+berdi, 26–36 soniyada; prognoz matnlari shartnomaning aniq bandlariga tayanadi.
 
 ## Qonunlar bazasi
 
