@@ -74,6 +74,11 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 mark{background:var(--hl);color:inherit;padding:0 3px;border-radius:4px;font-weight:750}
 div.opt{cursor:default}
 .opt.big{font-weight:700;font-size:17px;border-width:2.5px}
+.why{margin-top:10px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 13px;font-size:14.5px;line-height:1.45}
+.card.warn{border-color:var(--warn);background:var(--warn-soft);color:var(--ink)}
+.srow{padding:9px 0;border-bottom:1px solid var(--line)}.srow:last-child{border:0}.srow .q{font-weight:600;font-size:15px}.srow .a{color:var(--ok);font-size:14.5px;font-weight:600;margin-top:2px}
+.spin{width:38px;height:38px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--acc);margin:0 auto;animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+@media print{.foot,.x,.toast{display:none!important}#app{padding:0;max-width:none}body{background:#fff}.card,.item{border:0;padding:0}}
 .hook{margin-top:12px;background:var(--hl);border-radius:12px;padding:10px 13px;font-size:15px;line-height:1.4}
 .item .hook{margin-top:8px;font-size:13.5px;padding:7px 10px}
 .deck{display:flex;gap:8px;align-items:stretch;margin-top:8px}
@@ -151,6 +156,7 @@ const DAY=864e5;
 const IV=[0,5*6e4,30*6e4,4*36e5,DAY,2*DAY];      // qisqa muddatli tayyorgarlik: 5 daq, 30 daq, 4 soat, 1 kun, 2 kun
 const BLOCK=50;
 let ALL=[],BYID={},SRC='',BUILTIN=null,BUILTIN_AI=null;
+let REPORT={dropped:[],guessed:[],flags:[]},DECKAI={},SECT=[],EX={},SHEET=null;
 let DECKS=LS.get('ik_decks',[]);                  // yuklangan testlar: [{id,name,n}]
 let P=LS.get('ik_p',{});                          // id -> {b,due,ok,bad,last}
 let CFG=Object.assign({size:20,think:false,preview:true,block:0,deck:'builtin',exams:{}},LS.get('ik_cfg',{}));
@@ -164,29 +170,55 @@ const app=document.getElementById('app');
 function norm(s){return s.toLowerCase().replace(/[‘’'`ʻʼ´]/g,"'").replace(/\s+/g,' ').trim()}
 function hash(s){let a=2166136261,b=5381;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,16777619);b=(Math.imul(b,33)+c)|0}
   return (a>>>0).toString(36)+(b>>>0).toString(36)}
+// To‘g‘ri javob FAQAT '+' bilan boshlangan qatordan olinadi. Belgisiz qatorlar taxmin qilinadi va hisobotda ko‘rsatiladi.
 function parse(text){
   const out=[],seen={};let cur=null,last='',blank=true;
+  const rep={blocks:0,dups:0,orphans:0,dropped:[],guessed:[],flags:[]};
   const fresh=t=>{cur={q:t,opts:[]};out.push(cur);last='q'};
   for(const raw of text.replace(/^﻿/,'').split(/\r?\n/)){
     const s=raw.trim();
     if(!s){blank=true;continue}
     if(s[0]==='#')fresh(s.slice(1).trim());
-    else if((s[0]==='+'||s[0]==='-')&&cur){cur.opts.push({t:s.slice(1).trim(),c:s[0]==='+'});last='o'}
-    else if(!cur||(cur.opts.length&&blank))fresh(s);             // belgisiz yangi savol
-    else if(last==='q'){if(/[:?]$/.test(s))cur.q+=' '+s;else{cur.opts.push({t:s,c:false});last='o'}}
-    else cur.opts[cur.opts.length-1].t+=' '+s;                   // variant davomi
+    else if(s[0]==='+'||s[0]==='-'){
+      if(!cur){rep.orphans++;blank=false;continue}
+      const two=/^(\+\s*-|-\s*\+)/.test(s);              // "-+ matn": ikki xil belgi — noaniq
+      const o={t:s.replace(two?/^[+-]\s*[+-]/:/^[+-]/,'').trim(),c:s[0]==='+'};
+      if(two){o.amb=1;o.line=s}
+      cur.opts.push(o);last='o'}
+    else if(!cur||(cur.opts.length&&blank)){fresh(s);rep.guessed.push({q:cur,line:s,as:'yangi savol deb olindi (# belgisi yo‘q)'})}
+    else if(last==='q'){
+      if(/[:?]$/.test(s)){cur.q+=' '+s;rep.guessed.push({q:cur,line:s,as:'savol matnining davomi deb olindi'})}
+      else{cur.opts.push({t:s,c:false});last='o';rep.guessed.push({q:cur,line:s,as:'NOTO‘G‘RI variant deb olindi (+ yoki - belgisi yo‘q)'})}}
+    else{cur.opts[cur.opts.length-1].t+=' '+s;rep.guessed.push({q:cur,line:s,as:'oldingi variantning davomi deb olindi'})}
     blank=false;
   }
-  const res=[];
+  rep.blocks=out.length;
+  const res=[],same={};
+  const stated=t=>{const m=t.match(/\((\d)\)/)||t.match(/(?:^|\s)(\d)\s*ta(?:\s|$)/);return m&&+m[1]>=2&&+m[1]<=6?+m[1]:0};
   for(const q of out){
     q.opts=q.opts.filter(o=>o.t);
+    const amb=q.opts.filter(o=>o.amb),pend=[];
+    if(amb.length){                                      // noaniq belgi: savolda aytilgan javoblar soniga qarab hal qilinadi
+      const m=stated(q.q),n0=q.opts.filter(o=>o.c).length,nf=n0+amb.reduce((a,o)=>a+(o.c?-1:1),0),flip=m&&n0!==m&&nf===m;
+      if(flip)amb.forEach(o=>o.c=!o.c);
+      amb.forEach(o=>pend.push({q,line:o.line,as:'ikki xil belgi bilan boshlangan; '+(flip?'savolda '+m+' ta javob so‘ralgani uchun ':'birinchi belgi bo‘yicha ')+(o.c?'TO‘G‘RI':'NOTO‘G‘RI')+' javob deb olindi — manbadan tekshiring'}));
+    }
     q.n=q.opts.filter(o=>o.c).length;
-    if(!q.q||!q.n||q.opts.length<2)continue;
+    if(!q.q||!q.n||q.opts.length<2){rep.dropped.push({q:q.q,why:!q.n?'to‘g‘ri javob (+) belgilanmagan':'variantlar yetarli emas'});continue}
     const key=o=>norm(o.t);
     q.id=hash(norm(q.q)+'|'+q.opts.filter(o=>o.c).map(key).sort().join('~')+'|'+q.opts.filter(o=>!o.c).map(key).sort().join('~'));
-    if(seen[q.id])continue;seen[q.id]=1;
-    q.no=res.length+1;res.push(q);
+    if(seen[q.id]){rep.dups++;q.dupOf=seen[q.id];continue}seen[q.id]=q;
+    q.no=res.length+1;res.push(q);rep.guessed.push(...pend);
+    // avtomatik tekshiruvlar
+    const m=stated(q.q);
+    if(m&&m!==q.n)rep.flags.push({id:q.id,note:'Savolda '+m+' ta javob so‘ralgan, lekin faylda '+q.n+' tasi + bilan belgilangan.'});
+    const ks=q.opts.map(key);
+    if(new Set(ks).size<ks.length)rep.flags.push({id:q.id,note:'Bir xil variant ikki marta yozilgan'+(q.opts.some(o=>o.c&&q.opts.some(x=>!x.c&&key(x)===key(o)))?' — biri + bilan, biri - bilan!':'.')});
+    const sk=norm(q.q)+'|'+ks.slice().sort().join('~');
+    if(same[sk])rep.flags.push({id:q.id,o:same[sk].id,note:'Aynan shu savol va variantlar '+same[sk].no+'-savolda boshqa javob bilan belgilangan.'});else same[sk]=q;
   }
+  rep.guessed=rep.guessed.map(g=>({line:g.line,as:g.as,id:(g.q.dupOf||g.q).id||null,q:g.q.q}));
+  res.report=rep;
   return res;
 }
 const WORD=/([\p{L}\p{N}'‘’ʻʼ`´-]+)/u;
@@ -214,19 +246,32 @@ function setData(text,name,ai){
   const qs=parse(text);
   if(!qs.length)return false;
   keywords(qs,ai);
-  ALL=qs;BYID={};qs.forEach(q=>BYID[q.id]=q);SRC=name;
-  if(CFG.block>Math.ceil(ALL.length/BLOCK))CFG.block=0;
+  ALL=qs;BYID={};qs.forEach(q=>BYID[q.id]=q);SRC=name;REPORT=qs.report;
+  DECKAI=(ai&&ai._deck)||{};
+  // bo‘limlar: AI mavzulari bo‘lsa — mavzular, bo‘lmasa 50 talik bloklar
+  SECT=[];
+  if(DECKAI.topics&&DECKAI.topics.length){
+    const used=new Set();
+    for(const t of DECKAI.topics){const l=t.ids.map(id=>BYID[id]).filter(q=>q&&!used.has(q.id)&&used.add(q.id));if(l.length)SECT.push({name:t.name,qs:l,topic:true})}
+    const rest=ALL.filter(q=>!used.has(q.id));if(rest.length)SECT.push({name:'Boshqa',qs:rest,topic:true});
+  }else for(let i=0;i<ALL.length;i+=BLOCK)SECT.push({name:(i+1)+'–'+Math.min(i+BLOCK,ALL.length),qs:ALL.slice(i,i+BLOCK)});
+  if(CFG.block>SECT.length)CFG.block=0;
+  EX=LS.get('ik_ex_'+CFG.deck,{})||{};SHEET=null;
   return true;
 }
 function examDate(){return CFG.exams[CFG.deck]||''}
 async function loadDeck(id){
   if(id!=='builtin'){
     const d=DECKS.find(d=>d.id===id),t=d&&LS.get('ik_deck_'+id,null);
-    if(t&&setData(t,d.name,LS.get('ik_ai_'+id,null))){CFG.deck=id;saveCfg();return true}
+    const prev=CFG.deck;CFG.deck=id;
+    if(t&&setData(t,d.name,LS.get('ik_ai_'+id,null))){saveCfg();return true}
+    CFG.deck=prev;
   }
   if(BUILTIN==null){try{const r=await fetch('questions.txt');if(r.ok)BUILTIN=await r.text()}catch(e){}
     try{const r=await fetch('questions.ai.json');if(r.ok)BUILTIN_AI=await r.json()}catch(e){}}
-  if(BUILTIN&&setData(BUILTIN,'IK-509',BUILTIN_AI)){CFG.deck='builtin';saveCfg();return true}
+  const prev=CFG.deck;CFG.deck='builtin';
+  if(BUILTIN&&setData(BUILTIN,'IK-509',BUILTIN_AI)){saveCfg();return true}
+  CFG.deck=prev;
   return false;
 }
 function addDeck(name,text){
@@ -252,11 +297,17 @@ async function boot(){
 }
 
 /* ---------- helpers ---------- */
+const why=q=>{const e=EX[q.id];
+  if(e===1)return '<div class="why mute">🤔 AI tushuntirish yozyapti…</div>';
+  if(e)return '<div class="why"><b>🤔 Nega shu javob?</b><br>'+esc(e.t)+(e.d?'<br><span style="color:var(--warn)">⚠ AI bu javob kalitiga shubha bildirdi — manbadan tekshiring. Imtihonda fayldagi javob hisobga olinadi.</span>':'')+'</div>';
+  return '<button class="btn sm ghost" style="margin-top:10px" data-act="explain" data-v="'+q.id+'">🤔 Nega shu javob?</button>'};
+const aid=q=>hook(q)+why(q);
+const keyHtml=q=>q.opts.filter(o=>o.c).map(o=>'<div class="a">✓ '+esc(o.t)+'</div>').join('');
 const hook=q=>q.m?'<div class="hook">💡 '+esc(q.m)+'</div>':'';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function pool(){return CFG.block?ALL.slice((CFG.block-1)*BLOCK,CFG.block*BLOCK):ALL}
+function pool(){return CFG.block&&SECT[CFG.block-1]?SECT[CFG.block-1].qs:ALL}
 function status(id){const p=P[id];return !p?'n':p.b<=1?'e':p.b===2?'l':'s'}
 function saveCfg(){LS.set('ik_cfg',CFG)}
 function grade(id,ok){
@@ -341,9 +392,8 @@ function home(){
   const pl=pool(),c={n:0,e:0,l:0,s:0};pl.forEach(q=>c[status(q.id)]++);
   const now=Date.now(),due=pl.filter(q=>P[q.id]&&P[q.id].due<=now).length;
   const pct=pl.length?Math.round(c.s/pl.length*100):0;
-  const nb=Math.ceil(ALL.length/BLOCK);
   let chips='<button class="chip'+(CFG.block===0?' on':'')+'" data-act="block" data-v="0">Hammasi ('+ALL.length+')</button>';
-  for(let i=1;i<=nb;i++)chips+='<button class="chip'+(CFG.block===i?' on':'')+'" data-act="block" data-v="'+i+'">'+((i-1)*BLOCK+1)+'–'+Math.min(i*BLOCK,ALL.length)+'</button>';
+  SECT.forEach((t,i)=>chips+='<button class="chip'+(CFG.block===i+1?' on':'')+'" data-act="block" data-v="'+(i+1)+'">'+esc(t.name)+(t.topic?' ('+t.qs.length+')':'')+'</button>');
   const st=streak(),today=DAYS[dayKey()]||0;
   show(`
   <div class="row" style="margin-bottom:12px"><button class="grow title" data-act="decks"><h1>${esc(SRC)} <span class="mute" style="font-size:16px">▾</span></h1><p class="mute small">${ALL.length} ta savol · testni almashtirish yoki yangi fayl yuklash</p></button>
@@ -359,8 +409,8 @@ function home(){
     </div>
   </div>
   ${planHtml()}
-  ${aiHtml()}
-  <h3>Bo‘lim</h3><div class="chips">${chips}</div>
+  ${checkCard()}
+  <h3>${SECT[0]&&SECT[0].topic?'Mavzu':'Bo‘lim'}</h3><div class="chips">${chips}</div>
   <h3>Mashq</h3>
   <div class="modes">
     <button class="mode main" data-act="learn"><span class="ic">🧠</span><span><b>Aqlli o‘rganish</b><span>Avval ko‘rasiz, keyin topasiz · ${CFG.size} ta savol</span></span></button>
@@ -368,7 +418,11 @@ function home(){
     <button class="mode" data-act="errors"><span class="ic">🎯</span><span><b>Xatolar ustida ishlash</b><span>Oxirgi marta xato javob berilgan savollar</span></span>${c.e?'<span class="badge">'+c.e+'</span>':''}</button>
     <button class="mode" data-act="cards"><span class="ic">🃏</span><span><b>Kartochkalar</b><span>Variantlarsiz: javobni o‘zingiz eslang</span></span></button>
     <button class="mode" data-act="examsetup"><span class="ic">⏱</span><span><b>Imtihon</b><span>Vaqt bilan, natija oxirida</span></span></button>
+    <button class="mode" data-act="pairs"><span class="ic">🔀</span><span><b>Farqini top</b><span>Bir-biriga o‘xshash, javobi har xil savollar yonma-yon</span></span>${(DECKAI.pairs||[]).length?'<span class="badge" style="background:var(--acc-soft);color:var(--acc)">'+DECKAI.pairs.length+'</span>':''}</button>
+    <button class="mode" data-act="sheet"><span class="ic">📝</span><span><b>Shpargalka</b><span>Eng ko‘p xato qilingan savollaringiz bir sahifada</span></span></button>
     <button class="mode" data-act="browse"><span class="ic">📖</span><span><b>Savollar bazasi</b><span>Qidirish va to‘g‘ri javoblarni ko‘rish</span></span></button>
+    <button class="mode" data-act="filecheck"><span class="ic">🔎</span><span><b>Fayl tekshiruvi</b><span>Savol va javoblar fayldan to‘g‘ri o‘qilganini ko‘rish</span></span></button>
+    <button class="mode" data-act="aitools"><span class="ic">✨</span><span><b>AI yordamchi</b><span>Ilmoqlar, mavzular, o‘xshash savollar, kalit tekshiruvi</span></span></button>
   </div>
   ${deferredInstall?'<div class="foot"><div><button class="btn" data-act="install">📲 Ilovani o‘rnatish</button></div></div>':''}`);
 }
@@ -385,7 +439,7 @@ function renderQ(){
     <h2>${q.html}</h2></div>`;
   let foot='';
   if(c.view){
-    h+='<div class="opts">'+q.opts.map(o=>`<div class="opt ${o.c?'ok big':'dim'}"><span class="k">${o.c?'✓':''}</span><span>${esc(o.t)}</span></div>`).join('')+'</div>'+hook(q);
+    h+='<div class="opts">'+q.opts.map(o=>`<div class="opt ${o.c?'ok big':'dim'}"><span class="k">${o.c?'✓':''}</span><span>${esc(o.t)}</span></div>`).join('')+'</div>'+aid(q);
     if(view)foot=(S.pos?'<button class="btn ghost" data-act="prev" style="flex:.5">Orqaga</button>':'')+'<button class="btn" data-act="next">Keyingi</button>';
     else{h+='<p class="mute small" style="text-align:center;margin-top:14px">Sariq so‘z bilan yashil javobni suratga olgandek eslab qoling — birozdan keyin so‘raladi.</p>';
       foot='<button class="btn" data-act="next">Esda qoldi →</button>'}
@@ -394,7 +448,7 @@ function renderQ(){
       h+='<div class="think"><p class="mute">Javobni ko‘z oldingizga keltiring, keyin tekshiring.</p></div>';
       foot='<button class="btn" data-act="reveal">Javobni ko‘rsatish</button>';
     }else{
-      h+='<div class="reveal">'+q.opts.filter(o=>o.c).map(o=>'<div class="ans">✓ '+esc(o.t)+'</div>').join('')+'</div>'+hook(q);
+      h+='<div class="reveal">'+q.opts.filter(o=>o.c).map(o=>'<div class="ans">✓ '+esc(o.t)+'</div>').join('')+'</div>'+aid(q);
       foot='<button class="btn no" data-act="rate" data-v="0">Bilmadim</button><button class="btn yes" data-act="rate" data-v="1">Bildim</button>';
     }
   }else if(!c.shown){
@@ -411,7 +465,7 @@ function renderQ(){
     h+='</div>';
     if(c.answered){
       h+=c.right?'<div class="fb ok">To‘g‘ri! 👏</div>'
-        :'<div class="fb bad">Xato. Yashil javobga yaxshilab qarang — bu savol yana qaytadi.</div>'+hook(q);
+        :'<div class="fb bad">Xato. Yashil javobga yaxshilab qarang — bu savol yana qaytadi.</div>'+aid(q);
       foot='<button class="btn" data-act="next">Keyingi</button>';
     }else if(exam){
       foot=(S.pos?'<button class="btn ghost" data-act="prev" style="flex:.5">Orqaga</button>':'')+
@@ -512,12 +566,100 @@ function list(){
 /* ---------- AI tahlili (faqat yuklangan testlar uchun; server: /api/analyze) ---------- */
 let AIRUN=null;
 function aiMissing(){return ALL.filter(q=>!q.m)}
-function aiHtml(){
-  if(CFG.deck==='builtin')return '';
-  const n=aiMissing().length;
-  if(!n)return '<p class="mute small" style="margin:10px 2px 0">✨ AI tahlili tayyor: langar so‘zlar va ilmoqlar qo‘shilgan.</p>';
-  return `<div class="card" style="margin-top:12px"><b>✨ AI bilan tahlil qilish</b><p class="mute small" style="margin:4px 0 10px">${n} ta savolga sariq langar so‘zlar va eslab qolish ilmog‘i yoziladi. Internet va kirish kodi kerak, bir necha daqiqa oladi.</p>
-    <button class="btn sm" data-act="ai">Tahlilni boshlash</button></div>`;
+const AIERR={bad_code:'Kirish kodi noto‘g‘ri.',rate_limited:'AI band — birozdan keyin qayta urinib ko‘ring.',not_configured:'AI server sozlanmagan.',
+  ai_auth:'AI kaliti ishlamayapti yoki kredit tugagan.',refused:'AI bu so‘rovni bajarishdan bosh tortdi.',too_large:'Test juda katta.',too_long:'AI javobi sig‘madi — qayta urinib ko‘ring.'};
+function getCode(){let c=LS.get('ik_code','');if(!c){c=(prompt('AI uchun kirish kodini kiriting:')||'').trim()}return c}
+async function api(path,body){                      // muvaffaqiyatsiz bo‘lsa o‘zbekcha xabar bilan xato tashlaydi
+  const code=getCode();if(!code)throw new Error('Kirish kodi kiritilmadi.');
+  let resp,data;
+  try{resp=await fetch(path,{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify(body)});data=JSON.parse(await resp.text())}
+  catch(e){throw new Error('AI serverga ulanib bo‘lmadi. Internetni tekshiring.')}
+  if(resp.status===401)LS.del('ik_code');
+  if(!resp.ok||data.error)throw new Error(AIERR[data.error]||'AI serverda xato ('+resp.status+').');
+  LS.set('ik_code',code);return data;
+}
+function checkCount(){return REPORT.guessed.length+REPORT.dropped.length+REPORT.flags.length+(REPORT.orphans?1:0)+(DECKAI.issues||[]).length}
+function checkCard(){
+  const n=checkCount();if(!n)return '';
+  return `<button class="card warn" data-act="filecheck" style="margin-top:12px;display:block;width:100%;text-align:left"><b>⚠ Javob kalitida ${n} ta tekshirish kerak bo‘lgan joy</b><p class="small" style="margin-top:4px">Yodlashdan oldin ko‘rib chiqing — bosing.</p></button>`;
+}
+const qCard=(q,extra)=>'<div class="item"><div class="q">'+q.no+'. '+q.html+'</div>'+keyHtml(q)+(extra||'')+'</div>';
+
+function check(){
+  stopTimer();S=null;
+  const r=REPORT,types={};ALL.forEach(q=>types[q.n]=(types[q.n]||0)+1);
+  const note=t=>'<div class="hook">'+esc(t)+'</div>';
+  const ai=DECKAI.issues,KIND={conflict:'Zid kalit',suspect:'Shubhali javob',format:'Matn buzilgan'};
+  let h=`<div class="qhead"><button class="x" data-act="home">←</button><h2>Fayl tekshiruvi</h2></div>
+  <div class="card"><p><b>${r.blocks}</b> ta savol bloki o‘qildi → <b>${ALL.length}</b> ta noyob savol.</p>
+    <p class="mute small" style="margin-top:6px">${r.dups} ta aynan takror savol birlashtirildi · ${Object.keys(types).sort().map(k=>k+' javobli: '+types[k]).join(' · ')}</p>
+    <p class="small" style="margin-top:10px">To‘g‘ri javob faqat faylda <b>+</b> bilan boshlangan qatordan olinadi. AI javob kalitini hech qachon o‘zgartirmaydi — faqat shubhali joylarni ko‘rsatadi.</p></div>`;
+  if(r.orphans)h+='<h3>Savolsiz qatorlar</h3><div class="item">Fayl boshida savolga tegishli bo‘lmagan '+r.orphans+' ta + / - qator bor — ular tashlab ketildi.</div>';
+  if(r.dropped.length)h+='<h3>Tashlab ketilgan savollar ('+r.dropped.length+')</h3>'+r.dropped.map(d=>'<div class="item"><div class="q">'+esc(d.q||'(matnsiz)')+'</div><div class="w" style="text-decoration:none">Sabab: '+esc(d.why)+'</div></div>').join('');
+  if(r.guessed.length)h+='<h3>Belgisiz qatorlar ('+r.guessed.length+')</h3><p class="mute small" style="margin-bottom:4px">Bu qatorlar #, + yoki - bilan boshlanmagan. Ilova ularni quyidagicha tushundi — faylda to‘g‘rilab, qayta yuklagan ma’qul.</p>'+
+    r.guessed.map(g=>{const q=g.id&&BYID[g.id];return '<div class="item"><div class="q">«'+esc(g.line)+'»</div><div class="small" style="margin-top:4px">'+esc(g.as)+'</div>'+(q?'<div class="mute small" style="margin-top:4px">'+q.no+'-savol: '+esc(q.q)+'</div>':'')+'</div>'}).join('');
+  if(r.flags.length)h+='<h3>Avtomatik tekshiruv ('+r.flags.length+')</h3>'+r.flags.map(f=>qCard(BYID[f.id],note(f.note))).join('');
+  h+='<h3>AI tekshiruvi'+(ai?' ('+ai.length+')':'')+'</h3>';
+  if(ai)h+=(ai.length?'<p class="mute small" style="margin-bottom:4px">AI shubhali deb topgan joylar. Bu maslahat xolos: imtihonda fayldagi javob hisobga olinadi, shuning uchun manbadan tekshiring.</p>':'<p class="mute small">AI shubhali joy topmadi.</p>')+
+    ai.map(i=>{const q=BYID[i.id],o=i.o&&BYID[i.o];return q?qCard(q,(o?'<div class="q" style="margin-top:10px">'+o.no+'. '+o.html+'</div>'+keyHtml(o):'')+'<div class="hook"><b>'+(KIND[i.kind]||'')+':</b> '+esc(i.note)+'</div>'):''}).join('');
+  else h+='<div class="card"><p class="small mute" style="margin-bottom:10px">AI butun testni o‘qib, bir-biriga zid yoki shubhali javoblarni topadi. 1–3 daqiqa oladi.</p><button class="btn sm" data-act="deckai" data-v="audit">AI bilan tekshirish</button></div>';
+  show(h);
+}
+
+function pairsView(){
+  stopTimer();S=null;
+  const ps=(DECKAI.pairs||[]).filter(p=>BYID[p.a]&&BYID[p.b]);
+  let h='<div class="qhead"><button class="x" data-act="home">←</button><h2>Farqini top</h2></div>';
+  if(!ps.length)h+='<div class="card"><p class="small mute" style="margin-bottom:10px">AI butun testni o‘qib, bir-biri bilan chalkashtirish oson bo‘lgan savollarni juftlab beradi. 1–3 daqiqa oladi.</p><button class="btn sm" data-act="deckai" data-v="pairs">O‘xshash savollarni topish</button></div>';
+  else h+='<p class="mute small" style="margin-bottom:4px">'+ps.length+' ta juftlik. Ikkala savolni yonma-yon ko‘rib, sariq so‘zlar va javob farqini eslab qoling.</p>'+
+    ps.map(p=>{const a=BYID[p.a],b=BYID[p.b];return '<div class="item pair"><div class="hook" style="margin-top:0">'+esc(p.d.replace(/\bn(\d+)\b/g,'$1-savol'))+'</div><div class="q" style="margin-top:10px">'+a.no+'. '+a.html+'</div>'+keyHtml(a)+'<div class="q" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">'+b.no+'. '+b.html+'</div>'+keyHtml(b)+'</div>'}).join('');
+  show(h);
+}
+
+function sheetView(){
+  stopTimer();S=null;
+  const worst=pool().filter(q=>P[q.id]&&P[q.id].bad>0).sort((a,b)=>P[b.id].bad-P[a.id].bad||P[a.id].b-P[b.id].b).slice(0,40);
+  let h='<div class="qhead"><button class="x" data-act="home">←</button><h2>Shpargalka</h2></div>';
+  if(!worst.length){show(h+'<div class="card"><p class="mute">Hali xato qilingan savol yo‘q. Avval mashq qiling — eng ko‘p adashgan savollaringiz shu yerda to‘planadi.</p></div>');return}
+  const row=(q,cue)=>'<div class="srow"><div class="q">'+(cue?esc(cue):q.html)+' <span class="mute small">('+P[q.id].bad+'× xato)</span></div>'+keyHtml(q)+'</div>';
+  const ok=SHEET&&SHEET.key===worst.map(q=>q.id).join();
+  if(ok)h+=SHEET.sections.map(s=>'<h3>'+esc(s.title)+'</h3><div class="card sheet">'+s.rows.map(r=>row(BYID[r.id],r.cue)).join('')+'</div>').join('');
+  else h+='<p class="mute small" style="margin-bottom:8px">Eng ko‘p xato qilingan '+worst.length+' ta savol. Javoblar fayldagi kalitdan olinadi.</p><div class="card sheet">'+worst.map(q=>row(q)).join('')+'</div>';
+  h+='<div class="foot"><div>'+(ok?'':'<button class="btn" data-act="sheetai">✨ AI bilan guruhlash</button>')+'<button class="btn ghost" data-act="print">🖨 Chop etish</button></div></div>';
+  show(h);
+}
+
+function aiTools(){
+  stopTimer();S=null;
+  const own=CFG.deck!=='builtin',miss=aiMissing().length;
+  const row=(title,sub,done,act,v)=>`<div class="set"><div><b>${done?'✅':'⬜'} ${title}</b><p class="mute small">${sub}</p></div>${own?`<button class="btn sm ${done?'ghost':''}" data-act="${act}"${v?' data-v="'+v+'"':''}>${done?'Qayta':'Boshlash'}</button>`:''}</div>`;
+  show(`<div class="qhead"><button class="x" data-act="home">←</button><h2>✨ AI yordamchi</h2></div>
+  <div class="card">
+    ${row('Langar so‘zlar va ilmoqlar',miss?miss+' ta savol tahlil qilinmagan':'Hamma savolga yozilgan',!miss,'ai')}
+    ${row('Mavzularga ajratish',SECT[0]&&SECT[0].topic?SECT.length+' ta mavzu':'Bo‘limlar hozir 50 talik bloklar',!!(SECT[0]&&SECT[0].topic),'deckai','topics')}
+    ${row('O‘xshash savollar («Farqini top»)',DECKAI.pairs?DECKAI.pairs.length+' ta juftlik':'Topilmagan',!!DECKAI.pairs,'deckai','pairs')}
+    ${row('Javob kalitini tekshirish',DECKAI.issues?DECKAI.issues.length+' ta shubhali joy':'Tekshirilmagan',!!DECKAI.issues,'deckai','audit')}
+  </div>
+  <p class="mute small" style="margin:12px 2px">${own?'Har bir amal internet va kirish kodini talab qiladi. Natija shu qurilmada saqlanadi.':'IK-509 uchun AI tahlili ilovaga oldindan biriktirilgan.'} «Nega shu javob?» tugmasi mashq paytida javobdan keyin chiqadi. AI javob kalitini o‘zgartirmaydi.</p>`);
+}
+function busy(title,msg){show('<div class="qhead"><h2>'+esc(title)+'</h2></div><div class="card" style="text-align:center;padding:28px 16px"><div class="spin"></div><p class="mute" style="margin-top:14px">'+esc(msg)+'</p></div>')}
+const DECKTASK={topics:['Mavzularga ajratish',aiTools],pairs:['O‘xshash savollarni topish',pairsView],audit:['Javob kalitini tekshirish',check]};
+async function deckAi(task){
+  if(CFG.deck==='builtin')return toast('IK-509 uchun bu tahlil allaqachon biriktirilgan');
+  const deck=CFG.deck,[title,after]=DECKTASK[task];
+  if(!getCode())return;
+  busy('✨ '+title,'AI butun testni o‘qiyapti. Bu 1–3 daqiqa oladi — sahifani yopmang.');
+  try{
+    const data=await api('api/deck',{task,questions:ALL.map(q=>({n:q.no,q:q.q,ok:q.opts.filter(o=>o.c).map(o=>o.t),bad:task==='topics'?undefined:q.opts.filter(o=>!o.c).map(o=>o.t)}))});
+    const id=n=>ALL[n-1]&&ALL[n-1].id,ai=LS.get('ik_ai_'+deck,{})||{},d=ai._deck=ai._deck||{};
+    if(task==='topics')d.topics=data.topics.map(t=>({name:t.name,ids:t.nos.map(id).filter(Boolean)}));
+    if(task==='pairs')d.pairs=data.pairs.map(p=>({a:id(p.a),b:id(p.b),d:p.d}));
+    if(task==='audit')d.issues=data.issues.map(i=>({id:id(i.n),o:i.o?id(i.o):0,kind:i.kind,note:i.note}));
+    if(!LS.set('ik_ai_'+deck,ai))throw new Error('Qurilma xotirasi to‘ldi.');
+    if(task==='topics'){CFG.block=0;saveCfg()}
+    if(CFG.deck===deck)await loadDeck(deck);
+    toast('Tayyor ✨');after();
+  }catch(e){toast(e.message);after()}
 }
 function aiView(){
   const r=AIRUN;
@@ -592,12 +734,34 @@ const ACT={
   async deck(v){await loadDeck(v);CFG.block=0;saveCfg();home()},
   async deldeck(v){
     const d=DECKS.find(d=>d.id===v);if(!d||!confirm('«'+d.name+'» o‘chirilsinmi?'))return;
-    DECKS=DECKS.filter(x=>x.id!==v);LS.set('ik_decks',DECKS);LS.del('ik_deck_'+v);LS.del('ik_ai_'+v);delete CFG.exams[v];saveCfg();
+    DECKS=DECKS.filter(x=>x.id!==v);LS.set('ik_decks',DECKS);LS.del('ik_deck_'+v);LS.del('ik_ai_'+v);LS.del('ik_ex_'+v);delete CFG.exams[v];saveCfg();
     if(CFG.deck===v)await loadDeck('builtin');decks()},
   view(){const pl=pool(),weak=pl.filter(q=>status(q.id)!=='s');start('view',(weak.length?weak:pl).map(q=>'v:'+q.id))},
   auto(){if(timer)stopTimer();else timer=setInterval(()=>{if(S&&S.mode==='view')ACT.next();else stopTimer()},5000);renderQ()},
   preview(v){CFG.preview=v==='1';saveCfg();settings()},
   ai(){aiRun()},
+  filecheck:check,aitools:aiTools,pairs:pairsView,sheet:sheetView,
+  deckai(v){deckAi(v)},
+  print(){window.print()},
+  async explain(v){
+    const q=BYID[v];if(!q||EX[v])return;
+    if(!getCode())return;
+    const redraw=()=>{if(S&&S.cur&&S.cur.q.id===v)renderQ()};
+    EX[v]=1;redraw();
+    try{const d=await api('api/explain',{q:q.q,ok:q.opts.filter(o=>o.c).map(o=>o.t),bad:q.opts.filter(o=>!o.c).map(o=>o.t)});
+      EX[v]={t:d.text,d:d.doubt?1:0};const keep={};for(const k in EX)if(EX[k]!==1)keep[k]=EX[k];LS.set('ik_ex_'+CFG.deck,keep)}
+    catch(e){delete EX[v];toast(e.message)}
+    redraw()},
+  async sheetai(){
+    const worst=pool().filter(q=>P[q.id]&&P[q.id].bad>0).sort((a,b)=>P[b.id].bad-P[a.id].bad||P[a.id].b-P[b.id].b).slice(0,40);
+    if(!worst.length||!getCode())return;
+    busy('✨ Shpargalka','AI savollarni mavzular bo‘yicha guruhlayapti…');
+    try{const d=await api('api/sheet',{questions:worst.map(q=>({n:q.no,q:q.q,ok:q.opts.filter(o=>o.c).map(o=>o.t)}))});
+      const used=new Set(),sections=d.sections.map(s=>({title:s.title,rows:s.rows.map(r=>({id:ALL[r.n-1].id,cue:r.cue})).filter(r=>used.add(r.id))}));
+      const rest=worst.filter(q=>!used.has(q.id));if(rest.length)sections.push({title:'Boshqa',rows:rest.map(q=>({id:q.id,cue:''}))});
+      SHEET={key:worst.map(q=>q.id).join(),sections}}
+    catch(e){toast(e.message)}
+    sheetView()},
   aistop(){if(AIRUN){if(AIRUN.stopped){AIRUN=null;home()}else{AIRUN.stopped=true;AIRUN.msg='To‘xtatilmoqda…';aiView()}}},
   block(v){CFG.block=+v;saveCfg();home()},
   learn(){start('learn',withPreview(pickLearn(CFG.size)))},
