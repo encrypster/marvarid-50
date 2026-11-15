@@ -17,7 +17,7 @@ import worker, {
   verifyInitData,
   webhookSecret,
 } from "../src/index.js";
-import { htmlToText, lexId, parseDigest, resetLawsCache, stripNotes } from "../src/laws.js";
+import { htmlToText, lexId, parseDigest, parseEditions, refresh, resetLawsCache, stripNotes } from "../src/laws.js";
 
 const SAMPLE = readFileSync(new URL("../../samples/namuna_shartnoma.txt", import.meta.url), "utf8");
 const CHECKLIST = JSON.parse(readFileSync(new URL("../../data/checklist.json", import.meta.url), "utf8")).items;
@@ -330,7 +330,7 @@ test("Mini App API: Claude'ga jonli normalar beriladi, natijada asos matni bazad
   assert.deepEqual(report.counts, { bad: 2, unclear: 0, good: CHECKLIST.length - 2 });
   assert.equal(report.lawsCheckedAt, LAWS_VIEW.checkedAt);
   const [first, second] = report.findings;
-  assert.deepEqual(first.laws, [{ doc: "Ulush kiritish asosida qurish tartibi", ref: "Nizom, 18-band", text: LAWS_VIEW.current[0].provisions[0].text, plain: LAWS_VIEW.current[0].provisions[0].plain, url: "https://lex.uz/docs/-4831129" }]);
+  assert.deepEqual(first.laws, [{ doc: "Ulush kiritish asosida qurish tartibi", ref: "Nizom, 18-band", text: LAWS_VIEW.current[0].provisions[0].text, plain: LAWS_VIEW.current[0].provisions[0].plain, url: "https://lex.uz/docs/-4831129", edition: "" }]);
   assert.ok(first.lawNote.includes("Nizomga koʻra"));
   assert.deepEqual(second.laws, []);
   assert.equal(second.lawNote, "");
@@ -427,4 +427,49 @@ test("normalar matni model yozganidan emas, iqtibos oraligʻidan olinadi", () =>
   // Tahrir tarixi izohi norma matni sifatida koʻrsatilmaydi.
   assert.equal(stripNotes("(260-moddaning birinchi qismi Oʻzbekiston Respublikasining 2021-yil 21-apreldagi OʻRQ-683-sonli Qonuni tahririda — Qonunchilik"), "");
   assert.equal(stripNotes("Neustoyka bilan faqat haqiqiy talab taʼminlanadi.\n(21-modda 2022-yil 18-yanvardagi Qonunga asosan uchinchi qism bilan toʻldirilgan — x)"), "Neustoyka bilan faqat haqiqiy talab taʼminlanadi.");
+});
+
+const editionsHtml = (selected, links) => `<html><head><title>x</title></head><body>
+  <div class="dropdown-menu lx_date_ddm" aria-labelledby="dd3" id="lx_var_t" title="">
+    ${links.map((d) => `<div class="dropdown-menu__item lx_date_link" onclick="lxOpenUrl('/docs/-111189?ONDATE=${d}')">${d}</div>`).join("")}
+    <div class="dropdown-menu__item lx_date_selected stopProp">${selected}</div>
+  </div></div>
+  <p>${"Hujjat matni. ".repeat(300)}</p></body></html>`;
+
+test("tahrir sanasi lex.uz roʻyxatidan olinadi; kelgusi tahrirlar ajratiladi", () => {
+  const parsed = parseEditions(editionsHtml("12.09.2026 01", ["28.01.2027", "25.07.2026", "29.06.2026"]), "-111189");
+  assert.equal(parsed.edition, "12.09.2026 01");
+  assert.equal(parsed.editionDate, "2026-09-12");
+  assert.deepEqual(parsed.future, [{ date: "2027-01-28", url: "https://lex.uz/docs/-111189?ONDATE=28.01.2027" }]);
+  assert.deepEqual(parseEditions("<html>tahrirsiz</html>", "-1"), { edition: "", editionDate: "", future: [] });
+  // Oʻzgartirilmagan hujjat: tahrirlar roʻyxati yoʻq, sana sarlavhadan olinadi.
+  assert.deepEqual(parseEditions("<title>&nbsp;PF-11-сон 27.01.2025.&nbsp;Farmon</title><p>01.02.2025</p>", "-7353734"), { edition: "27.01.2025", editionDate: "2025-01-27", future: [] });
+});
+
+test("refresh: sana oʻzgarmasa matn qayta olinmaydi, yangi tahrirda olinadi", async () => {
+  const kv = new Map();
+  const env = { KV: { get: async (k, type) => (kv.has(k) ? (type === "json" ? JSON.parse(kv.get(k)) : kv.get(k)) : null), put: async (k, v) => void kv.set(k, v) } };
+  kv.set("laws:registry", JSON.stringify({ in_force: [{ id: "-111189", lex_url: "https://lex.uz/docs/-111189" }] }));
+  let page = editionsHtml("12.09.2026 01", ["28.01.2027"]);
+  globalThis.fetch = async () => new Response(page);
+
+  assert.match((await refresh(env))[0], /yangi hujjat, tahrir 2026-09-12/);
+  const first = JSON.parse(kv.get("laws:doc:-111189"));
+  assert.equal(first.edition, "12.09.2026 01");
+  assert.ok(first.text.includes("Hujjat matni."));
+
+  page = page.replace("Hujjat matni.", "Boshqa matn, lekin sana oʻsha."); // matn farqi hisobga olinmaydi
+  assert.match((await refresh(env))[0], /oʻzgarmagan/);
+  assert.ok(JSON.parse(kv.get("laws:doc:-111189")).text.includes("Hujjat matni."));
+
+  page = editionsHtml("28.01.2027", []);
+  assert.match((await refresh(env))[0], /YANGI TAHRIR 2027-01-28/);
+  assert.deepEqual(JSON.parse(kv.get("laws:doc:-111189")).future, []);
+
+  // Sana belgisi boʻlmagan eski yozuvga sana qayta oʻqishsiz biriktiriladi.
+  kv.set("laws:doc:-111189", JSON.stringify({ id: "-111189", text: "eski" }));
+  kv.set("laws:digest:-111189", JSON.stringify({ id: "-111189", provisions: [] }));
+  assert.match((await refresh(env))[0], /biriktirildi/);
+  assert.equal(JSON.parse(kv.get("laws:digest:-111189")).edition, "28.01.2027");
+  assert.equal(JSON.parse(kv.get("laws:doc:-111189")).text, "eski");
 });

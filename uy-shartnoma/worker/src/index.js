@@ -80,7 +80,7 @@ ${JSON.stringify(
 
 /** Amaldagi normalar roʻyxati promptga qoʻshiladi: Claude faqat shularga tayanadi. */
 function findingsPrompt(lawIndex) {
-  const laws = [...lawIndex.entries()].map(([id, law]) => ({ id, hujjat: law.doc, manzil: law.ref, matn: law.text }));
+  const laws = [...lawIndex.entries()].map(([id, law]) => ({ id, hujjat: law.doc, tahrir: law.edition, manzil: law.ref, matn: law.text }));
   return `${BASE_PROMPT}
 
 Amaldagi normalar (lex.uz dagi rasmiy matndan aynan olingan; baza har kuni yangilanadi):
@@ -353,7 +353,9 @@ export function lawIndexes(view) {
   const lawIndex = new Map();
   const upIndex = new Map();
   for (const doc of view?.current ?? []) {
-    for (const p of doc.provisions) lawIndex.set(p.id, { doc: doc.title, ref: p.ref, text: p.text, plain: p.plain, url: doc.url });
+    for (const p of doc.provisions) {
+      lawIndex.set(p.id, { doc: doc.title, ref: p.ref, text: p.text, plain: p.plain, url: doc.url, edition: doc.editionDate || "" });
+    }
   }
   for (const law of view?.upcoming ?? []) {
     for (const p of law.provisions) upIndex.set(p.id, { ...p, law: law.title });

@@ -28,9 +28,12 @@ turadi va uni har kuni Claude yangilaydi (`worker/src/laws.js`):
 1. **Kuzatuv** (`discover`). Claude veb-qidiruv bilan mavzuga tegishli amaldagi
    hujjatlarni (lex.uz manzili bilan) va hali kuchga kirmagan qonunlarni topadi.
    Oldingi kungi natija unga faqat qayta tekshirish uchun beriladi.
-2. **Matnlar** (`refresh`). Har bir amaldagi hujjatning toʻliq matni lex.uz dan
-   olinadi; oʻzgargan-oʻzgarmagani matn xeshi bilan aniqlanadi.
-3. **Oʻqish** (`digest`). Matni yangi yoki oʻzgargan hujjatni Claude boshidan
+2. **Tahrir sanasi** (`refresh`). Har bir hujjatning lex.uz dagi amaldagi tahrir
+   sanasi tekshiriladi. Sana oʻzgarmagan boʻlsa, hech narsa qilinmaydi; yangi
+   tahrir chiqqan boʻlsa, toʻliq matn qayta olinadi. Hech oʻzgartirilmagan
+   hujjatda amaldagi tahrir — qabul qilingan sanasi. Eʼlon qilingan, lekin hali
+   kuchga kirmagan tahrirlar ham shu roʻyxatdan olinib, ilovada koʻrsatiladi.
+3. **Oʻqish** (`digest`). Yangi hujjatni yoki yangi tahriri chiqqan hujjatni Claude boshidan
    oxirigacha oʻqib, shartnomaga taalluqli har bir normani ajratadi.
 
 Jadval: har kuni 01:17 UTC (Toshkentda 06:17) toʻliq sikl; har 3 soatda
@@ -74,7 +77,7 @@ emas, faqat uy-joy shartnomasiga taalluqli hujjatlar kuzatiladi.
 | Ish | Bir marta | Izoh |
 |---|---|---|
 | Kunlik kuzatuv | ~0,85 $ | 2026-11-15 da oʻlchangan: 182 ming kirish tokeni |
-| Hujjatni oʻqish | 0,1–2,6 $ | faqat matn oʻzgarganda; Fuqarolik kodeksi eng qimmati |
+| Hujjatni oʻqish | 0,1–2,6 $ | faqat yangi tahrir chiqqanda; Fuqarolik kodeksi eng qimmati |
 | Bitta shartnoma tekshiruvi | ~0,5 $ (hisob-kitob) | 294 norma matni ≈ 100 ming kirish tokeni; 65–70 soniya |
 
 Kunlik kuzatuv oyiga taxminan 25 $ boʻladi. Arzonlashtirish yoʻllari:
@@ -109,7 +112,7 @@ Bot profili (nomi, tavsifi, rasmi) Bot API orqali oʻrnatilgan.
 ```bash
 cd worker
 npm install
-npm test                                   # 17 ta test, tarmoqsiz
+npm test                                   # 19 ta test, tarmoqsiz
 CLOUDFLARE_API_TOKEN=... npx wrangler deploy
 ```
 

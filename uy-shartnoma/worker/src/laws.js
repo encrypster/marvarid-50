@@ -2,8 +2,8 @@
 //
 // Har kuni (cron):
 //   1. discover — Claude veb-qidiruv bilan amaldagi va kutilayotgan hujjatlarni topadi.
-//   2. refresh  — har bir amaldagi hujjatning toʻliq matni lex.uz dan olinadi.
-//   3. digest   — matni oʻzgargan hujjatni Claude toʻliq oʻqib, tegishli normalarni ajratadi.
+//   2. refresh  — lex.uz dagi amaldagi tahrir sanasi tekshiriladi; sana yangilangan boʻlsa matn qayta olinadi.
+//   3. digest   — yangi tahriri chiqqan hujjatni Claude toʻliq oʻqib, tegishli normalarni ajratadi.
 //
 // Toʻqimaslik kafolati modelning vaʼdasiga emas, tekshiruvga tayanadi:
 //   - amaldagi normalar matni Claude yozgan satr emas, API qaytargan iqtibos oraligʻi
@@ -74,9 +74,32 @@ export function lexId(url) {
 }
 export const lexUrl = (id) => `https://lex.uz/docs/${id}`;
 
-async function sha256(text) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+const isoDate = (ddmmyyyy) => {
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})/.exec(ddmmyyyy || "");
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+};
+
+/**
+ * lex.uz sahifasidagi tahrirlar roʻyxati ("Вариантлар"): lx_date_selected — hozir amaldagi tahrir,
+ * undan keyingi sanalar — eʼlon qilingan, lekin hali kuchga kirmagan tahrirlar.
+ * edition — taqqoslash uchun kalit (bir kunda ikki tahrir boʻlsa "12.09.2026 01" kabi raqami bilan).
+ */
+export function parseEditions(html, id) {
+  const start = html.indexOf('id="lx_var_t"');
+  // Roʻyxat sanalardan iborat qisqa blok; uning oxirini aniqlash oʻrniga yetarli oyna olinadi.
+  const block = start === -1 ? "" : html.slice(start, start + 8000).split(/<\/div>\s*<\/div>\s*<\/div>/)[0];
+  const selected = /lx_date_selected[^>]*>\s*([^<]+?)\s*(?:<|$)/.exec(block)?.[1] || "";
+  const current = isoDate(selected);
+  const future = [...block.matchAll(/ONDATE=(\d{2}\.\d{2}\.\d{4})/g)]
+    .map((m) => isoDate(m[1]))
+    .filter((date) => current && date > current)
+    .filter((date, n, all) => all.indexOf(date) === n)
+    .sort()
+    .map((date) => ({ date, url: `${lexUrl(id)}?ONDATE=${date.split("-").reverse().join(".")}` }));
+  if (current) return { edition: selected, editionDate: current, future };
+  // Hech oʻzgartirilmagan hujjatda tahrirlar roʻyxati yoʻq: amaldagi tahrir — qabul qilingan sana (sarlavhada).
+  const adopted = /<title>[^<]*?(\d{2}\.\d{2}\.\d{4})/i.exec(html)?.[1] || "";
+  return { edition: adopted, editionDate: isoDate(adopted), future: [] };
 }
 
 function parseJson(raw) {
@@ -288,18 +311,32 @@ export async function refresh(env) {
       const response = await fetch(item.lex_url, { headers: FETCH_HEADERS });
       if (!response.ok) throw new Error(`lex.uz ${response.status}`);
       const html = await response.text();
-      const title = htmlToText(/<title>([\s\S]*?)<\/title>/i.exec(html)?.[1] || "");
+      const { edition, editionDate, future } = parseEditions(html, item.id);
+      if (!edition) throw new Error("tahrir sanasi topilmadi");
+      const stored = await env.KV.get(docKey(item.id), "json");
+
+      // Hujjat oʻzgargani amaldagi tahrir sanasidan bilinadi: matnni solishtirish shart emas.
+      if (stored?.edition === edition) {
+        await env.KV.put(docKey(item.id), JSON.stringify({ ...stored, future, checkedAt: now() }));
+        log.push(`${item.id}: tahrir ${editionDate} — oʻzgarmagan`);
+        continue;
+      }
+      // Sana belgisi joriy etilishidan oldin oʻqilgan hujjat: matnini qayta oʻqimasdan sanani biriktiramiz.
+      const digest = await env.KV.get(digestKey(item.id), "json");
+      if (stored && !stored.edition && digest) {
+        await env.KV.put(docKey(item.id), JSON.stringify({ ...stored, edition, editionDate, future, checkedAt: now() }));
+        await env.KV.put(digestKey(item.id), JSON.stringify({ ...digest, edition }));
+        log.push(`${item.id}: tahrir ${editionDate} biriktirildi`);
+        continue;
+      }
       const text = htmlToText(html);
       if (text.length < 2000) throw new Error("matn juda qisqa");
-      const hash = await sha256(text);
-      const stored = await env.KV.get(docKey(item.id), "json");
-      if (stored?.hash === hash) {
-        await env.KV.put(docKey(item.id), JSON.stringify({ ...stored, checkedAt: now() }));
-        log.push(`${item.id}: oʻzgarmagan`);
-      } else {
-        await env.KV.put(docKey(item.id), JSON.stringify({ id: item.id, pageTitle: title, text, hash, changedAt: now(), checkedAt: now() }));
-        log.push(`${item.id}: ${stored ? "OʻZGARGAN" : "yangi"} (${text.length} belgi)`);
-      }
+      const pageTitle = htmlToText(/<title>([\s\S]*?)<\/title>/i.exec(html)?.[1] || "");
+      await env.KV.put(
+        docKey(item.id),
+        JSON.stringify({ id: item.id, pageTitle, text, edition, editionDate, future, changedAt: now(), checkedAt: now() }),
+      );
+      log.push(`${item.id}: ${stored ? `YANGI TAHRIR ${editionDate}` : `yangi hujjat, tahrir ${editionDate}`} (${text.length} belgi)`);
     } catch (error) {
       log.push(`${item.id}: xato — ${String(error?.message || error)}`);
     }
@@ -388,7 +425,7 @@ export async function digestOne(env, item) {
     digestKey(item.id),
     JSON.stringify({
       id: item.id,
-      hash: doc.hash,
+      edition: doc.edition,
       digestedAt: now(),
       repealed,
       provisions: provisions.map((p, n) => ({ id: `d${item.id.replace("-", "")}_${n + 1}`, ...p })),
@@ -406,7 +443,7 @@ export async function digestPending(env, budgetMs = 10 * 60_000, only = null) {
   for (const item of registry.in_force) {
     if (only && item.id !== only) continue;
     const [doc, digest] = await Promise.all([env.KV.get(docKey(item.id), "json"), env.KV.get(digestKey(item.id), "json")]);
-    if (!doc || (digest?.hash === doc.hash && !only)) continue;
+    if (!doc || (digest?.edition === doc.edition && !only)) continue;
     if (Date.now() - started > budgetMs) {
       log.push(`${item.id}: keyingi ishga tushishga qoldi`);
       continue;
@@ -443,9 +480,10 @@ export async function buildLawsView(env) {
       doc: item.doc,
       why: item.why,
       url: item.lex_url,
-      textChangedAt: doc.changedAt,
+      editionDate: doc.editionDate || "",
+      future: doc.future || [], // eʼlon qilingan, lekin hali kuchga kirmagan tahrirlar
       checkedAt: doc.checkedAt,
-      stale: digest.hash !== doc.hash, // matn oʻzgargan, normalar hali qayta oʻqilmagan
+      stale: digest.edition !== doc.edition, // yangi tahrir chiqqan, normalar hali qayta oʻqilmagan
       provisions,
     });
   }

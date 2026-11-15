@@ -526,7 +526,7 @@ details.more > summary .chev { color: var(--stamp); }
   // ---------- Tekshiruv: xulosa varagʻi ----------
   const excerpt = (label, text) => h("div", { class: "excerpt" }, caps(label), h("p", {}, text));
   const lawBlock = (law) => h("div", { class: "law" },
-    caps(`${law.doc} · ${law.ref}`), excerpt("Hujjat matni", law.text),
+    caps(`${law.doc} · ${law.ref}`), excerpt(law.edition ? `Hujjat matni · ${formatDate(law.edition)} tahriri` : "Hujjat matni", law.text),
     law.url ? extLink(law.url, "lex.uz da ochish") : null);
   /** Huquqiy asos: Claude izohi va bazadan olingan norma matni. Asos boʻlmasa, shu ochiq aytiladi. */
   function legalBasis(item, required) {
@@ -652,13 +652,15 @@ details.more > summary .chev { color: var(--stamp); }
         laws.current.map((doc) => h("div", { class: "col gap-8" },
           h("div", { class: "sec" }, h("h2", {}, doc.title)),
           h("p", { class: "small muted", style: "padding:0 2px" }, doc.doc, doc.why ? ` · ${doc.why}` : ""),
-          doc.stale ? h("div", { class: "msg note" }, icon("info"), h("span", {}, "Bu hujjat matni yaqinda oʻzgargan; normalar qayta oʻqilmoqda.")) : null,
+          doc.stale ? h("div", { class: "msg note" }, icon("info"), h("span", {}, "Hujjatning yangi tahriri chiqdi; normalar qayta oʻqilmoqda.")) : null,
+          doc.future?.length ? h("div", { class: "msg note" }, icon("clock"), h("span", {}, "Yangi tahriri eʼlon qilingan: ",
+            doc.future.map((f, n) => [n ? ", " : "", extLink(f.url, `${formatDate(f.date)} dan kuchga kiradi`)]))) : null,
           h("div", { class: "sheet", style: "margin-top:4px" },
             doc.provisions.map((p) => h("details", { class: "row reading t-stamp" },
               h("summary", {}, h("span", { class: "tag" }, p.ref), h("span", { class: "name" }, p.plain), chevron()),
               h("div", { class: "content" }, excerpt("Hujjat matni", p.text))))),
           h("div", { class: "small muted", style: "padding:4px 2px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap" },
-            extLink(doc.url, "Toʻliq matn — lex.uz"), h("span", {}, `Matn tekshirilgan: ${dayOf(doc.checkedAt)}`)))),
+            extLink(doc.url, "Toʻliq matn — lex.uz"), h("span", {}, doc.editionDate ? `Amaldagi tahrir: ${formatDate(doc.editionDate)}` : `Tekshirilgan: ${dayOf(doc.checkedAt)}`)))),
         laws.pending?.length ? h("div", { class: "msg note" }, icon("info"), h("span", {}, `Oʻqish navbatida: ${laws.pending.join("; ")}.`)) : null,
         h("div", { class: "msg note" }, icon("info"), h("span", {}, "Norma matnlari lex.uz dagi rasmiy matndan aynan olingan. Sodda izohlarni Claude yozgan; ular yurist koʻrigidan oʻtmagan."))));
       views.laws.dataset.ready = "1";
@@ -692,7 +694,16 @@ details.more > summary .chev { color: var(--stamp); }
           groups.imkoniyat.length ? h("div", { class: "col gap-12" }, h("div", { class: "sec" }, h("h2", {}, "Xaridor uchun imkoniyatlar"), caps(`${groups.imkoniyat.length} ta`)), h("div", { class: "sheet" }, groups.imkoniyat.map(provisionRow))) : null,
           groups.xavf.length ? h("div", { class: "col gap-12" }, h("div", { class: "sec" }, h("h2", {}, "Eʼtibor berish kerak"), caps(`${groups.xavf.length} ta`)), h("div", { class: "sheet" }, groups.xavf.map(provisionRow))) : null);
       }
-      if (!laws.upcoming.length) nodes.push(h("div", { class: "msg note" }, icon("info"), h("span", {}, "Hozircha kuzatuvda kutilayotgan qonun yoʻq.")));
+      const editions = laws.current.flatMap((doc) => (doc.future || []).map((f) => ({ ...f, title: doc.title })));
+      if (editions.length) {
+        nodes.push(h("div", { class: "col gap-12" },
+          h("div", { class: "sec" }, h("h2", {}, "Amaldagi hujjatlarning yangi tahrirlari"), caps(`${editions.length} ta`)),
+          h("div", { class: "sheet" }, editions.map((f) => h("div", { class: "row", style: "padding:14px 16px" },
+            h("span", { class: "tag", style: "display:inline-block;margin-bottom:6px" }, `${formatDate(f.date)} dan`),
+            h("div", { class: "name" }, f.title),
+            h("div", { style: "margin-top:6px" }, extLink(f.url, "Yangi tahrir matni — lex.uz")))))));
+      }
+      if (!laws.upcoming.length && !editions.length) nodes.push(h("div", { class: "msg note" }, icon("info"), h("span", {}, "Hozircha kuzatuvda kutilayotgan qonun yoʻq.")));
       nodes.push(h("div", { class: "msg note" }, icon("info"), h("span", {}, `Holat har kuni yangiliklar va rasmiy manbalardan tekshiriladi; har bir qoida manbadagi aynan matni bilan berilgan. Oxirgi kuzatuv: ${dayOf(laws.checkedAt)}.`)));
       mount(views.upcoming, h("div", { class: "col gap-24", style: "padding-top:14px" }, nodes));
       views.upcoming.dataset.ready = "1";
