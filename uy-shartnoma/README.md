@@ -7,7 +7,40 @@ bandlarni iqtibos bilan koʻrsatadi va quruvchidan nimani soʻrashni aytadi.
 Tekshiruv roʻyxati (`data/checklist.json`, 12 band) Raqobat qoʻmitasining
 132 ta quruvchi shartnomasi boʻyicha 2026-yil 6-noyabrdagi tahliliga asoslangan.
 
-## Ishga tushirish
+## Cloudflare'da ishga tushirish (tavsiya etiladi)
+
+`worker/` papkasida botning Cloudflare Workers uchun yozilgan nusxasi bor. Unga
+alohida hosting ham, Anthropic kaliti ham kerak emas: model Cloudflare Workers AI
+dan olinadi (`@cf/zai-org/glm-4.7-flash`, bepul tarifda kuniga 10 000 "neuron").
+
+1. Cloudflare sahifasida **Workers & Pages → Create → Import a repository**.
+2. `encrypster/marvarid-50` repozitoriysini tanlang va sozlang:
+   - Project name: `uy-shartnoma-bot`
+   - Production branch: `ccr-9c0f1497-mtd7k9`
+   - Root directory: `uy-shartnoma/worker`
+   - Deploy command: `npx wrangler deploy`
+3. Joylangach, Worker sahifasida **Settings → Variables and Secrets → Add**:
+   turi **Secret**, nomi `TELEGRAM_BOT_TOKEN`, qiymati bot tokeni.
+4. Brauzerda `https://uy-shartnoma-bot.<sizning-subdomen>.workers.dev/setup`
+   manzilini bir marta oching. `{"ok":true}` chiqsa, bot ishlayapti.
+
+KV ombori (`uy-shartnoma-bot`) hisobda yaratilgan va `wrangler.jsonc` ga yozilgan.
+
+Python nusxasidan farqlari:
+
+- Rasm va skanerlangan PDF oʻqilmaydi; faqat matnli PDF, DOCX, TXT va yozib
+  yuborilgan matn.
+- Model ochiq va bepul, shuning uchun oʻzbekcha huquqiy matnda Claude'dan
+  kuchsizroq boʻlishi mumkin. Sifatni haqiqiy shartnomalarda tekshirish kerak.
+  Modelni `wrangler.jsonc` dagi `MODEL` orqali almashtirsa boʻladi.
+- Bepul tarifda har soʻrovga 10 ms protsessor vaqti beriladi; juda uzun
+  shartnomada yetmasligi mumkin.
+
+Testlar: `cd worker && npm test`.
+
+## Python nusxasi (Render yoki oʻz serveringiz uchun)
+
+### Ishga tushirish
 
 ```bash
 python3 -m venv .venv
