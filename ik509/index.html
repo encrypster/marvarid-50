@@ -308,7 +308,29 @@ const hook=q=>q.m?'<div class="hook">💡 '+esc(q.m)+'</div>':'';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function pool(){return CFG.block&&SECT[CFG.block-1]?SECT[CFG.block-1].qs:ALL}
+function range(){                                    // tartib raqami bo‘yicha oraliq: [a,b] yoki null (hammasi)
+  const r=(CFG.range||{})[CFG.deck];if(!r)return null;
+  const a=Math.max(1,Math.min(ALL.length,r.a|0||1)),b=Math.max(a,Math.min(ALL.length,r.b|0||ALL.length));
+  return a===1&&b===ALL.length?null:{a,b};
+}
+function setRange(a,b){
+  CFG.range=CFG.range||{};
+  a=Math.max(1,Math.min(ALL.length,a|0||1));b=Math.max(a,Math.min(ALL.length,b|0||ALL.length));
+  if(a===1&&b===ALL.length)delete CFG.range[CFG.deck];else CFG.range[CFG.deck]={a,b};
+  saveCfg();
+}
+function pool(){
+  const base=CFG.block&&SECT[CFG.block-1]?SECT[CFG.block-1].qs:ALL,r=range();
+  return r?base.filter(q=>q.no>=r.a&&q.no<=r.b):base;
+}
+function rangeHtml(){
+  const r=range()||{a:1,b:ALL.length};
+  return `<h3>Oraliq</h3><div class="card"><div class="row" style="flex-wrap:wrap">
+    <div class="step"><input type="number" inputmode="numeric" class="rng" data-k="a" min="1" max="${ALL.length}" value="${r.a}"><span class="mute">dan</span>
+      <input type="number" inputmode="numeric" class="rng" data-k="b" min="1" max="${ALL.length}" value="${r.b}"><span class="mute">gacha</span></div>
+    <div class="step" style="margin-left:auto"><button data-act="rstep" data-v="-10">−10</button><button data-act="rstep" data-v="10">+10</button></div></div>
+    <p class="mute small" style="margin-top:10px">${range()?'Mashq va imtihonda faqat '+r.a+'–'+r.b+' raqamli savollar tushadi ('+pool().length+' ta), shular ichida aralashtiriladi. <button class="mute small" data-act="rall" style="text-decoration:underline">Hammasini ochish</button>':'Hozir hamma savol ochiq. Nechanchi savolgacha ko‘rib chiqqan bo‘lsangiz, o‘sha sonni «gacha» ga yozing — faqat o‘shalar tushadi.'}</p></div>`;
+}
 function status(id){const p=P[id];return !p?'n':p.b<=1?'e':p.b===2?'l':'s'}
 function saveCfg(){LS.set('ik_cfg',CFG)}
 function grade(id,ok){
@@ -357,7 +379,8 @@ function pickLearn(n){
   const later=pl.filter(q=>P[q.id]&&P[q.id].due>now).sort(byBox);
   const out=due.slice(0,Math.ceil(n*.6));
   for(const src of [fresh,due,later])for(const q of src){if(out.length>=n)break;if(!out.includes(q))out.push(q)}
-  return shuffle(out).map(q=>q.id);
+  // takrorlanadiganlar aralash, yangi savollar esa fayldagi tartibda (1, 2, 3 …)
+  return shuffle(out.filter(q=>P[q.id])).concat(out.filter(q=>!P[q.id]).sort((a,b)=>a.no-b.no)).map(q=>q.id);
 }
 function withPreview(ids){                        // yangi savol avval ko‘rsatiladi, 3 ta kartadan keyin so‘raladi
   if(!CFG.preview)return ids;
@@ -413,6 +436,7 @@ function home(){
   ${planHtml()}
   ${checkCard()}
   <h3>${SECT[0]&&SECT[0].topic?'Mavzu':'Bo‘lim'}</h3><div class="chips">${chips}</div>
+  ${rangeHtml()}
   <h3>Mashq</h3>
   <div class="modes">
     <button class="mode main" data-act="learn"><span class="ic">🧠</span><span><b>Aqlli o‘rganish</b><span>Avval ko‘rasiz, keyin topasiz · ${CFG.size} ta savol</span></span></button>
@@ -765,6 +789,8 @@ const ACT={
   ai(){aiRun()},
   filecheck:check,aitools:aiTools,pairs:pairsView,sheet:sheetView,
   deckai(v){deckAi(v)},
+  rstep(v){const r=range()||{a:1,b:ALL.length};setRange(r.a,Math.max(r.a,r.b+ +v));home()},
+  rall(){setRange(1,ALL.length);home()},
   aiall(){aiAll()},
   print(){window.print()},
   async explain(v){
@@ -823,7 +849,7 @@ const ACT={
   async install(){if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;home()}
 };
 app.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v!==undefined?b.dataset.v:b.dataset.i,b)});
-app.addEventListener('change',e=>{if(e.target.classList.contains('exn')){exSet(e.target.dataset.k,+e.target.value);return examSetup()}if(e.target.id==='exam'){CFG.exams[CFG.deck]=e.target.value||'';saveCfg();toast('Test kuni saqlandi')}});
+app.addEventListener('change',e=>{if(e.target.classList.contains('rng')){const r=range()||{a:1,b:ALL.length};r[e.target.dataset.k]=+e.target.value||0;if(e.target.dataset.k==='a'&&r.a>r.b)r.b=r.a;if(e.target.dataset.k==='b'&&r.b<r.a)r.a=1;setRange(r.a,r.b);return home()}if(e.target.classList.contains('exn')){exSet(e.target.dataset.k,+e.target.value);return examSetup()}if(e.target.id==='exam'){CFG.exams[CFG.deck]=e.target.value||'';saveCfg();toast('Test kuni saqlandi')}});
 document.addEventListener('keydown',e=>{
   if(!S||!S.cur||e.target.tagName==='INPUT')return;
   if(e.key==='Enter'){const b=app.querySelector('.foot .btn:last-child:not([disabled])');if(b)b.click()}
