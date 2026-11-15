@@ -7,249 +7,253 @@
 <meta name="description" content="Yangi uy shartnomasini imzolashdan oldin tekshiring">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
+/* Brend: hujjat va muhr. Oq qogʻoz, siyoh-qora matn, bitta urgʻu — muhr siyohining koʻki.
+   Natija "xulosa varagʻi" koʻrinishida, ustiga muhr bosilgan. Qolgan hamma narsa sokin. */
+@font-face { font-family: "Onest"; font-weight: 100 900; font-display: swap; src: url("/fonts/onest-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+2215; }
+@font-face { font-family: "Onest"; font-weight: 100 900; font-display: swap; src: url("/fonts/onest-cyrillic.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Onest"; font-weight: 100 900; font-display: swap; src: url("/fonts/onest-cyrillic-ext.woff2") format("woff2");
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F; }
+@font-face { font-family: "Plex Mono"; font-weight: 400; font-display: swap; src: url("/fonts/plex-mono-latin-400.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+2215; }
+@font-face { font-family: "Plex Mono"; font-weight: 500; font-display: swap; src: url("/fonts/plex-mono-latin-500.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+2215; }
+@font-face { font-family: "Plex Mono"; font-weight: 400; font-display: swap; src: url("/fonts/plex-mono-cyrillic-400.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Plex Mono"; font-weight: 400; font-display: swap; src: url("/fonts/plex-mono-cyrillic-ext-400.woff2") format("woff2");
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F; }
+
 :root {
-  --bg: #F5F3EE; --surface: #FFFFFF; --sunken: #F0EDE5; --ink: #0E1C19; --muted: #5C6965; --faint: #8A9591;
-  --line: #E6E1D6; --line-strong: #D6D0C2;
-  --brand: #0A5C4C; --brand-2: #0F7A64; --brand-soft: #E3F1ED; --on-brand: #FFFFFF;
-  --hero-a: #083F35; --hero-b: #0F7A64; --on-hero: #FFFFFF; --on-hero-muted: rgba(255,255,255,.74);
-  --danger: #B4382A; --danger-soft: #FBEBE7; --warn: #96610F; --warn-soft: #FBF2DE;
-  --ok: #24704A; --ok-soft: #E3F2E8;
-  --r-lg: 20px; --r-md: 14px; --r-sm: 10px;
-  --shadow: 0 1px 2px rgba(14,28,25,.05), 0 8px 24px rgba(14,28,25,.06);
-  --nav-h: 64px;
+  --desk: #ECEEF4; --paper: #FFFFFF; --paper-2: #F5F6FA; --ink: #0F1430; --ink-2: #4B5272; --ink-3: #838AA8;
+  --rule: #DFE2EC; --rule-2: #C6CBDC;
+  --stamp: #2A3FC7; --stamp-soft: #E9ECFB; --on-stamp: #FFFFFF;
+  --red: #C2331F; --red-soft: #FBEAE6; --amber: #96590A; --amber-soft: #FAEFD8; --green: #1B7548; --green-soft: #E2F3E9;
+  --sans: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --nav-h: 60px;
 }
 :root[data-theme="dark"] {
-  --bg: #0C1412; --surface: #141E1B; --sunken: #101916; --ink: #E9EFEC; --muted: #94A29D; --faint: #6F7D78;
-  --line: #24312C; --line-strong: #31403A;
-  --brand: #3CC7A6; --brand-2: #2FA88C; --brand-soft: #173029; --on-brand: #05211B;
-  --hero-a: #0B2A24; --hero-b: #125848; --on-hero: #F2F7F5; --on-hero-muted: rgba(242,247,245,.7);
-  --danger: #F08A78; --danger-soft: #34201C; --warn: #E6B45F; --warn-soft: #332A16;
-  --ok: #6FCF97; --ok-soft: #183023;
-  --shadow: 0 0 0 1px var(--line);
+  --desk: #090C18; --paper: #121629; --paper-2: #181D33; --ink: #ECEEF8; --ink-2: #A6ACC8; --ink-3: #6F7696;
+  --rule: #262C47; --rule-2: #363D5E;
+  --stamp: #96A3FF; --stamp-soft: #1E2449; --on-stamp: #0B0E1D;
+  --red: #FF917C; --red-soft: #3A1E1B; --amber: #EFBB62; --amber-soft: #352A11; --green: #6FD59D; --green-soft: #133021;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; }
+html, body { margin: 0; overflow-x: clip; }
 body {
-  background: var(--bg); color: var(--ink);
-  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--desk); color: var(--ink); font: 400 16px/1.5 var(--sans);
   -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
-  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);
 }
-main { max-width: 640px; margin: 0 auto; padding: 0 16px 16px; }
-h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
+main { max-width: 620px; margin: 0 auto; padding: 0 16px; }
+h1, h2, h3, p, ul, ol, blockquote { margin: 0; padding: 0; }
 ul, ol { list-style: none; }
+h1, h2, h3 { text-wrap: balance; }
 button { font: inherit; color: inherit; cursor: pointer; }
-a { color: var(--brand); text-decoration: none; font-weight: 600; }
-:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
+a { color: var(--stamp); text-decoration: none; font-weight: 600; }
+:focus-visible { outline: 2px solid var(--stamp); outline-offset: 2px; }
 [hidden] { display: none !important; }
-.icon { display: inline-flex; flex: none; }
-.icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon { display: inline-flex; flex: none; width: 20px; height: 20px; }
+.icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.col { display: flex; flex-direction: column; }
+.gap-8 { gap: 8px; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; }
+.caps { font: 500 11px/1.3 var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); }
+.muted { color: var(--ink-2); }
+.small { font-size: 13.5px; line-height: 1.45; }
 
-/* Sarlavha */
-.top { display: flex; align-items: center; gap: 10px; padding: 14px 2px 12px; }
-.logo { width: 34px; height: 34px; flex: none; }
-.brand-name { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
-.top .spacer { flex: 1; }
-.badge { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 650; }
-.badge .icon { width: 14px; height: 14px; }
+/* Sarlavha: logotip */
+.top { display: flex; align-items: center; gap: 10px; padding: 14px 0 10px; }
+.mark { width: 34px; height: 34px; flex: none; color: var(--stamp); }
+.wordmark { font-size: 15px; line-height: 1.1; letter-spacing: -.01em; }
+.wordmark b { display: block; font-weight: 800; }
+.wordmark span { color: var(--ink-2); font-weight: 500; }
 
-.stack > * + * { margin-top: 12px; }
-.stack-lg > * + * { margin-top: 20px; }
-.card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 16px; }
-.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 24px 4px 10px; }
-.section-head h2 { font-size: 18px; letter-spacing: -.01em; }
-.section-head span { font-size: 13px; color: var(--muted); }
-.muted { color: var(--muted); }
-.small { font-size: 13px; line-height: 1.45; }
+/* Bosh sahifa */
+.intro { position: relative; padding: 18px 0 4px; }
+.intro .watermark { position: absolute; right: -78px; top: -96px; width: 210px; height: 210px; color: var(--stamp); opacity: .1; transform: rotate(14deg); pointer-events: none; }
+.display { font-weight: 800; font-size: 31px; line-height: 1.08; letter-spacing: -.035em; max-width: 11.5em; position: relative; }
+.display em { font-style: normal; color: var(--stamp); }
+.lead { margin-top: 12px; font-size: 16px; color: var(--ink-2); max-width: 30em; position: relative; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 16px; position: relative; }
+.facts li { font: 500 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: baseline; gap: 6px; }
+.facts b { font: 800 17px/1 var(--sans); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
 
-/* Hero */
-.hero { position: relative; overflow: hidden; border-radius: var(--r-lg); padding: 22px 20px; color: var(--on-hero);
-  background: radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,.14), transparent 55%), linear-gradient(145deg, var(--hero-a), var(--hero-b)); }
-.hero h1 { font-size: 26px; line-height: 1.18; letter-spacing: -.025em; font-weight: 750; max-width: 15em; }
-.hero p { margin-top: 10px; font-size: 15px; color: var(--on-hero-muted); max-width: 30em; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
-.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: rgba(255,255,255,.14); font-size: 12.5px; font-weight: 600; color: var(--on-hero); }
-.chip .icon { width: 14px; height: 14px; }
+/* Varaq */
+.sheet { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; }
+.sheet.pad { padding: 16px; }
 
-/* Yuklash */
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--sunken); }
-.seg button { border: 0; background: none; min-height: 36px; border-radius: 9px; font-size: 14px; font-weight: 600; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 8px; }
-.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(14,28,25,.12); }
-:root[data-theme="dark"] .seg button[aria-pressed="true"] { background: var(--line-strong); box-shadow: none; }
-.seg .count { font-variant-numeric: tabular-nums; font-size: 12px; padding: 1px 6px; border-radius: 999px; background: var(--line); color: var(--muted); }
-.seg button[aria-pressed="true"] .count { background: var(--brand-soft); color: var(--brand); }
-.drop { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; border: 1.5px dashed var(--line-strong); border-radius: var(--r-md); padding: 24px 16px; cursor: pointer; transition: border-color .15s, background .15s; }
-.drop:active { background: var(--sunken); }
+/* Varaq ichidagi tablar */
+.tabs2 { display: flex; border-bottom: 1px solid var(--rule); }
+.tabs2 button { flex: 1; background: none; border: 0; padding: 13px 6px 12px; font-size: 14.5px; font-weight: 600; color: var(--ink-3); position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.tabs2 button .icon { width: 17px; height: 17px; }
+.tabs2 button[aria-pressed="true"] { color: var(--ink); }
+.tabs2 button[aria-pressed="true"]::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: -1px; height: 2px; background: var(--stamp); }
+.tabs2 .n { font: 500 12px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.tabs2 button[aria-pressed="true"] .n { color: var(--stamp); }
+
+.drop { display: flex; align-items: center; gap: 14px; border: 1.5px dashed var(--rule-2); border-radius: 10px; padding: 18px 16px; cursor: pointer; }
+.drop:active { background: var(--paper-2); }
 .drop input { display: none; }
-.drop .bubble { width: 48px; height: 48px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; margin-bottom: 4px; }
-.drop .bubble .icon { width: 24px; height: 24px; }
-.drop strong { font-size: 16px; }
-.drop span { font-size: 13px; color: var(--muted); }
-.file { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px; }
-.file .bubble { width: 42px; height: 42px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; flex: none; }
-.file .bubble .icon { width: 22px; height: 22px; }
+.drop .tile, .file .tile { width: 46px; height: 56px; flex: none; border: 1.5px solid var(--stamp); border-radius: 5px; color: var(--stamp); display: grid; place-items: center; position: relative; background: var(--paper); }
+.drop .tile::after, .file .tile::after { content: ""; position: absolute; right: -1.5px; top: -1.5px; width: 13px; height: 13px; background: linear-gradient(225deg, var(--paper) 49%, var(--stamp) 50%, var(--stamp) 56%, var(--stamp-soft) 57%); }
+.drop strong { display: block; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.drop span, .file span { font-size: 13px; color: var(--ink-2); }
+.file { display: flex; align-items: center; gap: 14px; border: 1px solid var(--rule); border-radius: 10px; padding: 14px 12px 14px 16px; }
+.file .tile { background: var(--stamp-soft); }
 .file .meta { flex: 1; min-width: 0; }
-.file .name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 0; background: var(--sunken); color: var(--muted); display: grid; place-items: center; flex: none; }
-.icon-btn .icon { width: 18px; height: 18px; }
-textarea { display: block; width: 100%; min-height: 170px; resize: vertical; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); padding: 12px 14px; font: inherit; font-size: 15px; line-height: 1.45; }
-textarea::placeholder { color: var(--faint); }
-textarea:focus { outline: 2px solid var(--brand); outline-offset: -1px; border-color: transparent; }
-.counter { text-align: right; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.file .name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { width: 38px; height: 38px; border-radius: 8px; border: 0; background: none; color: var(--ink-3); display: grid; place-items: center; flex: none; }
+.icon-btn:active { background: var(--paper-2); }
+textarea { display: block; width: 100%; min-height: 168px; resize: vertical; border: 1px solid var(--rule-2); border-radius: 10px; background: var(--paper); color: var(--ink); padding: 12px 14px; font: 400 13.5px/1.55 var(--mono); }
+textarea::placeholder { color: var(--ink-3); }
+textarea:focus { outline: 2px solid var(--stamp); outline-offset: -1px; border-color: transparent; }
+.counter { font: 400 12px/1.3 var(--mono); color: var(--ink-3); text-align: right; font-variant-numeric: tabular-nums; }
 
-.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; border: 0; border-radius: var(--r-md); background: var(--brand); color: var(--on-brand); font-weight: 650; font-size: 16px; padding: 0 18px; transition: transform .08s, opacity .15s; }
-.btn:active { transform: scale(.985); }
-.btn:disabled { opacity: .4; cursor: default; transform: none; }
-.btn .icon { width: 20px; height: 20px; }
-.btn.secondary { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
-.btn.quiet { background: none; color: var(--brand); min-height: 44px; font-size: 15px; }
-.btn.compact { width: auto; min-height: 34px; padding: 0 12px; font-size: 13px; border-radius: 9px; background: var(--surface); color: var(--brand); box-shadow: inset 0 0 0 1px var(--line-strong); }
-.btn.compact .icon { width: 15px; height: 15px; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 52px; border: 0; border-radius: 10px; background: var(--stamp); color: var(--on-stamp); font-weight: 700; font-size: 16px; letter-spacing: -.005em; padding: 0 18px; transition: transform .08s, opacity .15s; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { background: var(--rule); color: var(--ink-3); cursor: default; transform: none; }
+.btn.line { background: none; color: var(--ink); border: 1px solid var(--rule-2); }
+.btn.text { background: none; color: var(--stamp); min-height: 44px; font-size: 15px; font-weight: 600; }
+.btn.mini { width: auto; min-height: 32px; padding: 0 10px; border-radius: 7px; background: var(--paper); color: var(--stamp); border: 1px solid var(--rule-2); font: 500 11.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; gap: 6px; }
+.btn.mini .icon { width: 14px; height: 14px; }
 
-.alert { display: flex; gap: 10px; border-radius: var(--r-md); padding: 12px 14px; font-size: 14px; line-height: 1.4; background: var(--danger-soft); color: var(--danger); }
-.alert .icon { width: 18px; height: 18px; margin-top: 1px; }
+.msg { display: flex; gap: 10px; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.45; }
+.msg .icon { width: 18px; height: 18px; margin-top: 1px; }
+.msg.error { background: var(--red-soft); color: var(--red); }
+.msg.note { background: none; border: 1px dashed var(--rule-2); color: var(--ink-2); }
 
-/* Qadamlar */
-.how li { display: flex; gap: 12px; align-items: flex-start; }
-.how li + li { margin-top: 14px; }
-.how .num { width: 28px; height: 28px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
-.how b { display: block; font-size: 15px; }
-.how span { font-size: 13.5px; color: var(--muted); }
+.steps li { display: grid; grid-template-columns: 34px 1fr; gap: 0 10px; padding: 14px 0; }
+.steps li + li { border-top: 1px solid var(--rule); }
+.steps .n { font: 500 13px/1.6 var(--mono); color: var(--stamp); }
+.steps b { font-weight: 700; font-size: 15.5px; letter-spacing: -.01em; }
+.steps .desc { grid-column: 2; font-size: 14px; color: var(--ink-2); }
 
-/* Yuklanish */
-.progress { padding: 26px 20px; }
-.progress h2 { font-size: 20px; letter-spacing: -.015em; }
-.bar { height: 6px; border-radius: 999px; background: var(--sunken); overflow: hidden; margin: 16px 0 18px; }
-.bar i { display: block; height: 100%; width: 35%; border-radius: inherit; background: var(--brand); animation: slide 1.5s ease-in-out infinite; }
-@keyframes slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(300%); } }
-.stages li { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--faint); padding: 7px 0; }
-.stages li .dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line-strong); flex: none; display: grid; place-items: center; }
+/* Kutish */
+.wait { padding: 30px 20px 24px; text-align: center; }
+.wait .spin { width: 132px; height: 132px; margin: 0 auto 18px; position: relative; color: var(--stamp); }
+.wait .spin svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wait .spin .ring { animation: turn 14s linear infinite; }
+.wait .spin .center { display: grid; place-items: center; }
+.wait .spin .center .icon { width: 34px; height: 34px; }
+@keyframes turn { to { transform: rotate(360deg); } }
+.wait h2 { font-size: 21px; font-weight: 800; letter-spacing: -.025em; }
+.stages { text-align: left; margin: 18px auto 0; max-width: 300px; }
+.stages li { display: flex; align-items: center; gap: 10px; font-size: 14.5px; color: var(--ink-3); padding: 6px 0; }
+.stages .box { width: 18px; height: 18px; border: 1.5px solid var(--rule-2); border-radius: 4px; flex: none; display: grid; place-items: center; }
+.stages .box .icon { width: 12px; height: 12px; }
+.stages .box .icon svg { stroke-width: 3; }
 .stages li.active { color: var(--ink); font-weight: 600; }
-.stages li.active .dot { border-color: var(--brand); border-top-color: transparent; animation: spin .8s linear infinite; }
-.stages li.done { color: var(--muted); }
-.stages li.done .dot { border-color: var(--ok); background: var(--ok); color: var(--surface); }
-.stages li.done .dot .icon { width: 12px; height: 12px; }
-.stages li.done .dot .icon svg { stroke-width: 3; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .bar i, .stages li.active .dot { animation-duration: 4s; } }
+.stages li.active .box { border-color: var(--stamp); animation: pulse 1s ease-in-out infinite; }
+.stages li.done { color: var(--ink-2); }
+.stages li.done .box { border-color: var(--stamp); background: var(--stamp); color: var(--on-stamp); }
+@keyframes pulse { 50% { background: var(--stamp-soft); } }
+@media (prefers-reduced-motion: reduce) { .wait .spin .ring, .stages li.active .box { animation: none; } }
 
-/* Natija */
-.verdict { display: flex; align-items: center; gap: 16px; }
-.gauge { position: relative; width: 92px; height: 92px; flex: none; }
-.gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.gauge circle { fill: none; stroke-width: 9; }
-.gauge .track { stroke: var(--sunken); }
-.gauge .value { stroke: var(--tone); stroke-linecap: round; transition: stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1); }
-.gauge .num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; line-height: 1; }
-.gauge .num b { font-size: 28px; font-weight: 750; letter-spacing: -.03em; color: var(--tone); font-variant-numeric: tabular-nums; }
-.gauge .num span { font-size: 11px; color: var(--muted); margin-top: 3px; }
-.verdict h2 { font-size: 21px; line-height: 1.2; letter-spacing: -.02em; }
-.verdict .tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tone); margin-bottom: 4px; }
-.tone-high { --tone: var(--danger); } .tone-mid { --tone: var(--warn); } .tone-ok { --tone: var(--ok); }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); margin-top: 16px; padding-top: 14px; }
-.stats div { text-align: center; }
-.stats div + div { border-left: 1px solid var(--line); }
-.stats b { display: block; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.stats span { font-size: 12px; color: var(--muted); }
-.stats .bad b { color: var(--danger); } .stats .unclear b { color: var(--warn); } .stats .good b { color: var(--ok); }
-.summary { margin-top: 14px; font-size: 15px; color: var(--muted); }
-.sticky-seg { position: sticky; top: 0; z-index: 3; margin: 16px -16px 0; padding: 8px 16px; background: var(--bg); }
+/* Xulosa varagʻi */
+.verdict { position: relative; padding: 16px 16px 18px; overflow: hidden; }
+.verdict .docline { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.verdict .body { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; padding-top: 16px; }
+.verdict h2 { font-size: 23px; font-weight: 800; line-height: 1.14; letter-spacing: -.03em; }
+.verdict .seal { width: 126px; height: 126px; margin: -8px -12px -8px 0; transform: rotate(-11deg); color: var(--tone); }
+.seal.in { animation: press .45s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes press { from { opacity: 0; transform: rotate(-11deg) scale(1.5); } to { opacity: 1; transform: rotate(-11deg) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .seal.in { animation: none; } }
+.tone-high { --tone: var(--red); } .tone-mid { --tone: var(--amber); } .tone-ok { --tone: var(--stamp); }
+.tally { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 16px; border: 1px solid var(--rule); border-radius: 10px; }
+.tally > div { padding: 10px 12px; }
+.tally > div + div { border-left: 1px solid var(--rule); }
+.tally b { display: block; font-size: 26px; font-weight: 800; line-height: 1.1; letter-spacing: -.04em; margin-bottom: 3px; }
+.tally .bad b { color: var(--red); } .tally .unclear b { color: var(--amber); } .tally .good b { color: var(--green); }
+.summary { margin-top: 14px; font-size: 15px; color: var(--ink-2); }
+.sticky { position: sticky; top: 0; z-index: 3; background: var(--paper); border-radius: 14px 14px 0 0; }
 
-/* Band kartasi */
-details.item { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden; }
-details.item > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
-details.item > summary::-webkit-details-marker { display: none; }
-.sev { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex: none; background: var(--tone-soft); color: var(--tone); }
-.sev .icon { width: 19px; height: 19px; }
-.sev-yuqori, .kind-xavf { --tone: var(--danger); --tone-soft: var(--danger-soft); }
-.sev-orta, .sev-past, .sev-unclear { --tone: var(--warn); --tone-soft: var(--warn-soft); }
-.sev-good, .kind-imkoniyat { --tone: var(--ok); --tone-soft: var(--ok-soft); }
-.item .head { flex: 1; min-width: 0; }
-.item .head .label { font-size: 12px; font-weight: 650; color: var(--tone); }
-.item .head .name { font-size: 15.5px; font-weight: 650; line-height: 1.3; }
-.item.reading .head .name { font-weight: 500; line-height: 1.4; margin-top: 2px; }
-.chev { width: 20px; height: 20px; color: var(--faint); transition: transform .2s; }
+/* Band qatori */
+details.row { border-bottom: 1px solid var(--rule); }
+details.row:last-child { border-bottom: 0; }
+details.row > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr 20px; gap: 4px 10px; align-items: center; padding: 14px 16px; }
+details.row > summary::-webkit-details-marker { display: none; }
+.tag { justify-self: start; grid-column: 1 / -1; font: 500 10.5px/1 var(--mono); letter-spacing: .09em; text-transform: uppercase; padding: 4px 6px; border-radius: 4px; background: var(--tone-soft); color: var(--tone); }
+.t-red { --tone: var(--red); --tone-soft: var(--red-soft); }
+.t-amber { --tone: var(--amber); --tone-soft: var(--amber-soft); }
+.t-green { --tone: var(--green); --tone-soft: var(--green-soft); }
+.t-stamp { --tone: var(--stamp); --tone-soft: var(--stamp-soft); }
+.row .name { font-size: 16px; font-weight: 700; line-height: 1.3; letter-spacing: -.012em; }
+.row.reading .name { font-size: 15px; font-weight: 500; line-height: 1.4; letter-spacing: 0; }
+.chev { width: 18px; height: 18px; color: var(--ink-3); transition: transform .2s; }
 details[open] > summary .chev { transform: rotate(180deg); }
-.item .body { padding: 0 16px 16px; }
-.item .body > * + * { margin-top: 12px; }
-blockquote { margin: 0; padding: 12px 14px; background: var(--sunken); border-radius: var(--r-sm); font-size: 14px; line-height: 1.5; border-left: 3px solid var(--tone, var(--line-strong)); white-space: pre-line; overflow-wrap: anywhere; }
-.field .eyebrow { margin-bottom: 3px; }
-.field p { font-size: 15px; }
-.ask { background: var(--brand-soft); border-radius: var(--r-md); padding: 12px 14px; }
-.ask .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-.ask .eyebrow { color: var(--brand); }
-.ask p { font-size: 15px; font-weight: 550; }
-.fact { display: flex; gap: 8px; font-size: 13px; color: var(--muted); }
-.fact .icon { width: 16px; height: 16px; margin-top: 1px; color: var(--faint); }
-details.sub { border-top: 1px solid var(--line); padding-top: 12px; }
-details.sub > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 650; color: var(--brand); }
-details.sub > summary::-webkit-details-marker { display: none; }
-details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
-.law { margin-top: 12px; }
-.law .ref { font-size: 13px; font-weight: 700; }
-.law .plain { font-size: 14px; margin: 2px 0 8px; }
-.law a { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
+.row .content { padding: 0 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.excerpt { background: var(--paper-2); border-radius: 8px; padding: 12px 14px; }
+.excerpt .caps { margin-bottom: 6px; }
+.excerpt p { font: 400 13px/1.6 var(--mono); white-space: pre-line; overflow-wrap: anywhere; }
+.field p { font-size: 15px; margin-top: 3px; }
+.ask { border: 1px solid var(--stamp); border-radius: 10px; padding: 12px 14px; }
+.ask .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.ask .caps { color: var(--stamp); }
+.ask p { font-size: 15.5px; font-weight: 600; line-height: 1.4; }
+.fact { font-size: 13px; color: var(--ink-2); padding-left: 12px; border-left: 2px solid var(--rule-2); }
+details.more > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; color: var(--stamp); padding-top: 12px; border-top: 1px solid var(--rule); }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary .chev { color: var(--stamp); }
+.law { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.law .plain { font-size: 14.5px; }
+.law a { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
 .law a .icon { width: 14px; height: 14px; }
-.rows li { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; font-size: 15px; }
-.rows li + li { border-top: 1px solid var(--line); }
-.rows .icon { width: 18px; height: 18px; margin-top: 2px; color: var(--ok); }
-.rows .icon svg { stroke-width: 2.4; }
-.notice { display: flex; gap: 10px; border-radius: var(--r-md); padding: 12px 14px; background: var(--sunken); font-size: 13.5px; line-height: 1.45; color: var(--muted); }
-.notice .icon { width: 18px; height: 18px; margin-top: 1px; color: var(--faint); }
-.empty { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 15px; }
+.empty { text-align: center; padding: 30px 16px; color: var(--ink-2); font-size: 15px; }
+.sec { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 2px; }
+.sec h2 { font-size: 19px; font-weight: 800; letter-spacing: -.025em; line-height: 1.2; }
+.pagehead h1 { font-size: 27px; font-weight: 800; letter-spacing: -.035em; line-height: 1.1; }
+.pagehead p { margin-top: 8px; color: var(--ink-2); font-size: 15px; }
 
-/* Bosqichlar */
-.timeline li { position: relative; display: flex; gap: 12px; padding-bottom: 16px; }
+/* Qonun bosqichlari */
+.timeline li { position: relative; display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding-bottom: 16px; }
 .timeline li:last-child { padding-bottom: 0; }
-.timeline li::before { content: ""; position: absolute; left: 11px; top: 24px; bottom: 0; width: 2px; background: var(--line); }
+.timeline li::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: var(--rule); }
 .timeline li:last-child::before { display: none; }
-.timeline li.done::before { background: var(--ok); }
-.timeline .mark { width: 24px; height: 24px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--line-strong); z-index: 1; }
-.timeline li.done .mark { background: var(--ok); border-color: var(--ok); color: var(--surface); }
-.timeline li.next .mark { border-color: var(--warn); }
-.timeline li.next .mark::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
-.timeline .mark .icon { width: 13px; height: 13px; }
-.timeline .mark .icon svg { stroke-width: 3; }
-.timeline b { display: block; font-size: 15px; line-height: 1.5; }
-.timeline span { font-size: 13px; color: var(--muted); }
-.timeline li:not(.done):not(.next) b { color: var(--muted); font-weight: 500; }
+.timeline li.done::before { background: var(--stamp); }
+.timeline .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--rule-2); background: var(--paper); display: grid; place-items: center; z-index: 1; }
+.timeline li.done .dot { background: var(--stamp); border-color: var(--stamp); color: var(--on-stamp); }
+.timeline li.done .dot .icon { width: 12px; height: 12px; }
+.timeline li.done .dot .icon svg { stroke-width: 3; }
+.timeline li.next .dot { border-color: var(--amber); }
+.timeline li.next .dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+.timeline b { display: block; font-size: 15px; font-weight: 700; line-height: 1.45; }
+.timeline li:not(.done):not(.next) b { color: var(--ink-3); font-weight: 500; }
 
 /* Pastki menyu */
-.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding: 6px 8px env(safe-area-inset-bottom);
-  background: color-mix(in srgb, var(--surface) 96%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); border-top: 1px solid var(--line); }
-.tab { background: none; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11.5px; font-weight: 600; color: var(--faint); }
-.tab .pill { width: 52px; height: 28px; border-radius: 999px; display: grid; place-items: center; transition: background .2s; }
-.tab .icon { width: 22px; height: 22px; }
-.tab[aria-selected="true"] { color: var(--brand); }
-.tab[aria-selected="true"] .pill { background: var(--brand-soft); }
-.toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); transform: translate(-50%, 12px); background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 6; white-space: nowrap; }
+.nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--paper); border-top: 1px solid var(--rule); }
+.nav button { background: none; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--ink-3); position: relative; }
+.nav button .icon { width: 22px; height: 22px; }
+.nav button[aria-selected="true"] { color: var(--stamp); }
+.nav button[aria-selected="true"]::before { content: ""; position: absolute; top: -1px; left: 28%; right: 28%; height: 2px; background: var(--stamp); }
+.toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); transform: translate(-50%, 10px); background: var(--ink); color: var(--paper); font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 6; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
 </head>
 <body>
+<!-- Muhr siyohining notekisligi: bosilgan muhrga oʻxshashi uchun. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="ink" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="1.700" numOctaves="1" seed="4" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.32" result="m"/>
+    <feComposite in="SourceGraphic" in2="m" operator="in"/>
+  </filter>
+</defs></svg>
+
 <main>
   <header class="top">
-    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M24 3 6 9.500v12.600c0 11 7.400 19.400 18 22.900 10.600-3.500 18-11.900 18-22.900V9.500z" fill="var(--brand)"/>
-      <rect x="15" y="13" width="18" height="22" rx="3" fill="var(--on-brand)"/>
-      <path d="M19 19h10M19 23.500h6" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" opacity=".5"/>
-      <path d="m19.500 29 3.200 3.200 6.300-6.700" fill="none" stroke="var(--brand)" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div class="brand-name">Ishonchli Shartnoma</div>
-    <div class="spacer"></div>
-    <div class="badge" id="badge"></div>
+    <span class="mark" id="mark"></span>
+    <div class="wordmark"><b>Ishonchli</b><span>Shartnoma</span></div>
   </header>
-
   <section id="view-check"></section>
   <section id="view-laws" hidden></section>
   <section id="view-upcoming" hidden></section>
 </main>
 
-<nav class="tabs" role="tablist" aria-label="Boʻlimlar">
-  <button class="tab" role="tab" data-tab="check" aria-selected="true"><span class="pill" data-icon="shield"></span>Tekshiruv</button>
-  <button class="tab" role="tab" data-tab="laws" aria-selected="false"><span class="pill" data-icon="book"></span>Qonunlar</button>
-  <button class="tab" role="tab" data-tab="upcoming" aria-selected="false"><span class="pill" data-icon="clock"></span>Kutilmoqda</button>
+<nav class="nav" role="tablist" aria-label="Boʻlimlar">
+  <button role="tab" data-tab="check" aria-selected="true"><span data-icon="doc"></span>Tekshiruv</button>
+  <button role="tab" data-tab="laws" aria-selected="false"><span data-icon="book"></span>Qonunlar</button>
+  <button role="tab" data-tab="upcoming" aria-selected="false"><span data-icon="clock"></span>Kutilmoqda</button>
 </nav>
 <div class="toast" id="toast" role="status"></div>
 
@@ -266,45 +270,68 @@ details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
     return match ? `${match[1]}-yil ${Number(match[3])}-${MONTHS[Number(match[2]) - 1]}` : iso;
   }
+  const today = () => { const d = new Date(); return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`; };
 
   // Statik, ishonchli SVG yoʻllari. Foydalanuvchi matni bu yerga hech qachon tushmaydi.
   const ICONS = {
-    shield: '<path d="M12 3 5 5.500v5.300c0 4.600 3 8.200 7 9.700 4-1.500 7-5.100 7-9.700V5.500z"/><path d="m9.200 12 2 2 3.600-3.800"/>',
+    doc: '<path d="M7 3.500h6.500L18 8v10.500a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2z"/><path d="M13.500 3.500V8H18"/><path d="m8.700 14.200 2.100 2.100 4-4.300"/>',
     book: '<path d="M5 4.500h10a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M9 9h5M9 12.500h5"/>',
     clock: '<circle cx="12" cy="12" r="8.500"/><path d="M12 7.500V12l3 2"/>',
-    upload: '<path d="M12 15.500V4.500M7.500 8.500 12 4l4.500 4.500"/><path d="M5 15.500v2a2.500 2.500 0 0 0 2.500 2.500h9a2.500 2.500 0 0 0 2.500-2.500v-2"/>',
-    file: '<path d="M7 3.500h6.500L18 8v10.500a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2z"/><path d="M13.500 3.500V8H18M8.500 12.500h7M8.500 16h5"/>',
+    upload: '<path d="M12 16V6M8 9.500 12 5.500l4 4"/>',
+    file: '<path d="M8 8.500h8M8 12h8M8 15.500h5"/>',
     text: '<path d="M5 6.500h14M5 11h14M5 15.500h9"/>',
     x: '<path d="m6.500 6.500 11 11M17.500 6.500l-11 11"/>',
     check: '<path d="m5 12.500 4.500 4.500L19 7.500"/>',
     alert: '<path d="M12 4.500 3.500 19h17z"/><path d="M12 10v4M12 16.700v.1"/>',
-    help: '<circle cx="12" cy="12" r="8.500"/><path d="M9.700 9.500a2.400 2.400 0 1 1 3.500 2.100c-.800.500-1.200 1-1.200 1.900M12 16.500v.1"/>',
     chevron: '<path d="m6.500 9.500 5.500 5.500 5.500-5.500"/>',
-    copy: '<rect x="8.500" y="8.500" width="11" height="11" rx="2.500"/><path d="M5.500 15.500h-.500a1.500 1.500 0 0 1-1.500-1.500V5a1.500 1.500 0 0 1 1.500-1.500h9A1.500 1.500 0 0 1 15.500 5v.500"/>',
-    lock: '<rect x="5.500" y="10.500" width="13" height="9.500" rx="2.500"/><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500"/>',
-    scale: '<path d="M12 4v16M7 20h10M5 7.500h14"/><path d="m5 7.500-2.500 6a2.700 2.700 0 0 0 5 0zM19 7.500l-2.500 6a2.700 2.700 0 0 0 5 0z"/>',
-    list: '<path d="M9 6.500h10M9 12h10M9 17.500h10"/><path d="m4.300 6.300.900.900 1.600-1.700M4.300 11.800l.900.900 1.600-1.700M4.300 17.300l.900.900 1.600-1.700"/>',
+    copy: '<rect x="8.500" y="8.500" width="11" height="11" rx="2"/><path d="M5.500 15.500h-.500a1.500 1.500 0 0 1-1.500-1.500V5a1.500 1.500 0 0 1 1.500-1.500h9A1.500 1.500 0 0 1 15.500 5v.500"/>',
     link: '<path d="M14 5h5v5M19 5l-8 8M17 14v3.500a1.500 1.500 0 0 1-1.500 1.500h-9A1.500 1.500 0 0 1 5 17.500v-9A1.500 1.500 0 0 1 6.500 7H10"/>',
-    plus: '<circle cx="12" cy="12" r="8.500"/><path d="M12 8.500v7M8.500 12h7"/>',
     info: '<circle cx="12" cy="12" r="8.500"/><path d="M12 11v5.500M12 7.700v.1"/>',
-    chart: '<path d="M5 19.500V10M12 19.500V4.500M19 19.500v-6"/>',
+    seal: '<path d="m7 12.300 3.300 3.300L17 8.800"/>',
   };
-  function icon(name, size) {
+  function icon(name) {
     const el = document.createElement("span");
     el.className = "icon"; el.setAttribute("aria-hidden", "true");
-    if (size) { el.style.width = el.style.height = `${size}px`; }
     el.innerHTML = `<svg viewBox="0 0 24 24">${ICONS[name]}</svg>`;
     return el;
   }
-  document.querySelectorAll("[data-icon]").forEach((el) => el.append(icon(el.dataset.icon)));
-  document.getElementById("badge").append(icon("scale"), "Qonun asosida");
+  document.querySelectorAll("[data-icon]").forEach((el) => el.replaceWith(icon(el.dataset.icon)));
+
+  /**
+   * Muhr. ring — aylana boʻylab yozuv, lines — oʻrtadagi yozuv (boʻsh boʻlsa belgi).
+   * Barcha matnlar shu fayldagi oʻzgarmas satrlar; foydalanuvchi matni kiritilmaydi.
+   */
+  let sealCount = 0;
+  function seal({ ring, lines = [], inked = true }) {
+    const id = `seal-path-${sealCount += 1}`;
+    const r = 39.500, length = (2 * Math.PI * r * 0.985).toFixed(1);
+    const center = lines.length
+      ? lines.map((line, n) => `<text x="60" y="${60 + (n - (lines.length - 1) / 2) * (lines.length > 1 ? 12.500 : 0) + (lines.length > 1 ? 3.800 : 5.200)}" text-anchor="middle" font-family="var(--sans)" font-weight="800" font-size="${lines.length > 1 ? 10.200 : 14}" letter-spacing=".04em" fill="currentColor">${line}</text>`).join("")
+      : `<path d="m47 60.500 9 9 17.500-19" fill="none" stroke="currentColor" stroke-width="5.500" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `<svg viewBox="0 0 120 120" role="img" aria-label="${ring}"><g ${inked ? 'filter="url(#ink)"' : ""}>
+      <circle cx="60" cy="60" r="56" fill="none" stroke="currentColor" stroke-width="3.200"/>
+      <circle cx="60" cy="60" r="50.500" fill="none" stroke="currentColor" stroke-width="1"/>
+      <circle cx="60" cy="60" r="30.500" fill="none" stroke="currentColor" stroke-width="1.400"/>
+      <path id="${id}" d="M60 60 m-${r} 0 a${r} ${r} 0 1 1 ${2 * r} 0 a${r} ${r} 0 1 1 -${2 * r} 0" fill="none"/>
+      <text font-family="var(--mono)" font-weight="500" font-size="8.600" fill="currentColor"><textPath href="#${id}" textLength="${length}" lengthAdjust="spacing">${ring}</textPath></text>
+      ${center}</g></svg>`;
+    return wrap.firstChild;
+  }
+  const RING = "ISHONCHLI SHARTNOMA ★ DASTLABKI TEKSHIRUV ★ ";
+  document.getElementById("mark").innerHTML =
+    '<svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15.200" fill="none" stroke="currentColor" stroke-width="2.200"/><circle cx="17" cy="17" r="11.400" fill="none" stroke="currentColor" stroke-width=".9"/><path d="m11.200 17.300 4 4 7.700-8.400" fill="none" stroke="currentColor" stroke-width="2.800" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function applyTheme() {
     // Telegramdan tashqarida uning skripti doim "light" qaytaradi, shuning uchun u yerda qurilma sozlamasiga qaraymiz.
     const dark = initData && tg?.colorScheme ? tg.colorScheme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
     document.documentElement.dataset.theme = dark ? "dark" : "light";
-    const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
-    try { tg?.setHeaderColor?.(bg); tg?.setBackgroundColor?.(bg); tg?.setBottomBarColor?.(bg); } catch {}
+    const style = getComputedStyle(document.documentElement);
+    try {
+      tg?.setHeaderColor?.(style.getPropertyValue("--desk").trim());
+      tg?.setBackgroundColor?.(style.getPropertyValue("--desk").trim());
+      tg?.setBottomBarColor?.(style.getPropertyValue("--paper").trim());
+    } catch {}
   }
   if (tg) { tg.ready(); tg.expand(); tg.onEvent?.("themeChanged", applyTheme); }
   applyTheme();
@@ -328,9 +355,10 @@ details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
   const haptic = (kind) => { try { tg?.HapticFeedback?.notificationOccurred(kind); } catch {} };
   const tap = () => { try { tg?.HapticFeedback?.selectionChanged(); } catch {} };
   function openLink(url) { if (tg?.openLink) tg.openLink(url); else window.open(url, "_blank", "noopener"); }
-  function extLink(url, label) {
-    return h("a", { href: url, onclick: (e) => { e.preventDefault(); openLink(url); } }, label, icon("link"));
-  }
+  const extLink = (url, label) => h("a", { href: url, onclick: (e) => { e.preventDefault(); openLink(url); } }, label, icon("link"));
+  const chevron = () => { const c = icon("chevron"); c.classList.add("chev"); return c; };
+  const caps = (text) => h("div", { class: "caps" }, text);
+
   const toastEl = document.getElementById("toast");
   let toastTimer;
   function toast(text) {
@@ -344,12 +372,11 @@ details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
     }
     haptic("success"); toast(done);
   }
-  function segmented(options, selected, onChange) {
-    const wrap = h("div", { class: "seg", role: "group" });
+  function tabs(options, selected, onChange) {
+    const wrap = h("div", { class: "tabs2", role: "group" });
     for (const option of options) {
       const button = h("button", { type: "button", "aria-pressed": String(option.id === selected) },
-        option.icon ? icon(option.icon, 16) : null, option.label,
-        option.count != null ? h("span", { class: "count" }, option.count) : null);
+        option.icon ? icon(option.icon) : null, option.label, option.count != null ? h("span", { class: "n" }, option.count) : null);
       button.addEventListener("click", () => {
         wrap.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
         tap(); onChange(option.id);
@@ -369,51 +396,51 @@ details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
   }
   function showTab(name) {
     for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
-    document.querySelectorAll(".tab").forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.tab === name)));
+    document.querySelectorAll(".nav button").forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.tab === name)));
     window.scrollTo(0, 0);
     if (name === "laws") renderLaws();
     if (name === "upcoming") renderUpcoming();
   }
-  document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => { tap(); showTab(tab.dataset.tab); }));
+  document.querySelectorAll(".nav button").forEach((tab) => tab.addEventListener("click", () => { tap(); showTab(tab.dataset.tab); }));
 
   // ---------- Tekshiruv: shakl ----------
   const state = { file: null, mode: "file", text: "" };
 
   function renderForm(error) {
-    const submit = h("button", { class: "btn", type: "button" }, icon("shield"), "Shartnomani tekshirish");
+    const submit = h("button", { class: "btn", type: "button" }, "Shartnomani tekshirish");
     const slot = h("div", {});
     const sync = () => { submit.disabled = state.mode === "file" ? !state.file : state.text.trim().length < MIN_CHARS; };
 
     function drawInput() {
       if (state.mode === "text") {
         const counter = h("div", { class: "counter" });
-        const area = h("textarea", { placeholder: "Shartnoma matnini shu yerga qoʻying…", "aria-label": "Shartnoma matni" });
+        const area = h("textarea", { id: "contract-text", placeholder: "Shartnoma matnini shu yerga qoʻying…", "aria-label": "Shartnoma matni" });
         area.value = state.text;
         const update = () => {
           state.text = area.value;
           const n = area.value.trim().length;
-          counter.textContent = n < MIN_CHARS ? `Kamida ${MIN_CHARS} belgi · hozir ${n}` : `${n.toLocaleString("ru-RU")} belgi`;
+          counter.textContent = n < MIN_CHARS ? `kamida ${MIN_CHARS} belgi · hozir ${n}` : `${n.toLocaleString("ru-RU")} belgi`;
           sync();
         };
         area.addEventListener("input", update);
-        mount(slot, h("div", { class: "stack" }, area, counter)); update();
+        mount(slot, h("div", { class: "col gap-8" }, area, counter)); update();
         return;
       }
       if (state.file) {
         mount(slot, h("div", { class: "file" },
-          h("div", { class: "bubble" }, icon("file")),
-          h("div", { class: "meta" }, h("div", { class: "name" }, state.file.name), h("div", { class: "small muted" }, `${Math.max(1, Math.round(state.file.size / 1024))} KB · tayyor`)),
+          h("div", { class: "tile" }, icon("file")),
+          h("div", { class: "meta" }, h("div", { class: "name" }, state.file.name), h("span", {}, `${Math.max(1, Math.round(state.file.size / 1024))} KB · tekshirishga tayyor`)),
           h("button", { class: "icon-btn", type: "button", "aria-label": "Faylni olib tashlash", onclick: () => { state.file = null; drawInput(); } }, icon("x"))));
       } else {
-        const input = h("input", { type: "file", accept: ".pdf,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+        const input = h("input", { id: "contract-file", type: "file", accept: ".pdf,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
         input.addEventListener("change", () => {
           const file = input.files[0];
           if (!file) return;
           if (file.size > MAX_BYTES) { renderForm("Fayl 4 MB dan katta. Kichikroq fayl tanlang yoki matnni qoʻlda kiriting."); return; }
           state.file = file; tap(); drawInput();
         });
-        mount(slot, h("label", { class: "drop" }, input, h("div", { class: "bubble" }, icon("upload")),
-          h("strong", {}, "Shartnoma faylini tanlang"), h("span", {}, "PDF, DOCX yoki TXT · 4 MB gacha")));
+        mount(slot, h("label", { class: "drop" }, input, h("div", { class: "tile" }, icon("upload")),
+          h("div", {}, h("strong", {}, "Faylni tanlang"), h("span", {}, "PDF, DOCX yoki TXT · 4 MB gacha"))));
       }
       sync();
     }
@@ -423,27 +450,28 @@ details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
       else run({ body: state.text, headers: { "content-type": "text/plain; charset=utf-8" } });
     });
 
-    mount(views.check, h("div", { class: "stack-lg" },
-      h("div", { class: "hero" },
-        h("h1", {}, "Uy shartnomangizda nima yashiringan?"),
-        h("p", {}, "Quruvchi bergan shartnomani yuklang — imzolashdan oldin xavfli bandlarni koʻrsatamiz."),
-        h("div", { class: "chips" },
-          h("span", { class: "chip" }, icon("list"), "12 ta band"),
-          h("span", { class: "chip" }, icon("scale"), "Qonun moddasi bilan"),
-          h("span", { class: "chip" }, icon("lock"), "Maxfiy"))),
-      error ? h("div", { class: "alert", role: "alert" }, icon("alert"), h("span", {}, error)) : null,
-      h("div", { class: "card stack" },
-        segmented([{ id: "file", label: "Fayl", icon: "file" }, { id: "text", label: "Matn", icon: "text" }], state.mode, (mode) => { state.mode = mode; drawInput(); }),
-        slot, submit,
-        h("button", { class: "btn quiet", type: "button", onclick: demo }, "Namuna natijani koʻrish")),
-      h("div", {},
-        h("div", { class: "section-head" }, h("h2", {}, "Qanday ishlaydi")),
-        h("div", { class: "card" }, h("ol", { class: "how" },
-          h("li", {}, h("span", { class: "num" }, "1"), h("div", {}, h("b", {}, "Shartnomani yuklaysiz"), h("span", {}, "Pasport, JSHSHIR, telefon va karta raqamlari tahlildan oldin yashiriladi."))),
-          h("li", {}, h("span", { class: "num" }, "2"), h("div", {}, h("b", {}, "12 ta band tekshiriladi"), h("span", {}, "Har bir xulosa shartnomadan olingan iqtibos va amaldagi qonun moddasi bilan beriladi."))),
-          h("li", {}, h("span", { class: "num" }, "3"), h("div", {}, h("b", {}, "Quruvchiga savollar olasiz"), h("span", {}, "Tayyor savollar va kutilayotgan qonun boʻyicha prognoz."))))),
-      ),
-      h("div", { class: "notice" }, icon("info"), h("span", {}, "Bu dastlabki avtomatik tekshiruv, huquqiy maslahat emas. Rasm va skanerlangan fayllar hozircha oʻqilmaydi."))));
+    const watermark = seal({ ring: RING, inked: false });
+    watermark.classList.add("watermark");
+    mount(views.check, h("div", { class: "col gap-24" },
+      h("div", { class: "intro" }, watermark,
+        h("h1", { class: "display" }, "Imzo qoʻyishdan oldin ", h("em", {}, "shartnomani tekshiring")),
+        h("p", { class: "lead" }, "Quruvchi bergan uy-joy shartnomasini yuklang. Xavfli bandlarni topamiz va quruvchidan nimani soʻrashni aytamiz."),
+        h("ul", { class: "facts" },
+          h("li", {}, h("b", {}, "12"), "band tekshiriladi"),
+          h("li", {}, h("b", {}, "21"), "qonun moddasi"),
+          h("li", {}, h("b", {}, "~30"), "soniya"))),
+      error ? h("div", { class: "msg error", role: "alert" }, icon("alert"), h("span", {}, error)) : null,
+      h("div", { class: "sheet" },
+        tabs([{ id: "file", label: "Fayl yuklash", icon: "upload" }, { id: "text", label: "Matn kiritish", icon: "text" }], state.mode, (mode) => { state.mode = mode; drawInput(); }),
+        h("div", { class: "col gap-12", style: "padding:16px" }, slot, submit,
+          h("button", { class: "btn text", type: "button", onclick: demo }, "Namuna xulosani koʻrish"))),
+      h("div", { class: "col gap-8" },
+        h("div", { class: "sec" }, h("h2", {}, "Qanday ishlaydi")),
+        h("ol", { class: "steps" },
+          h("li", {}, h("span", { class: "n" }, "01"), h("b", {}, "Shartnomani yuklaysiz"), h("span", { class: "desc" }, "Pasport, JSHSHIR, telefon va karta raqamlari tahlildan oldin yashiriladi. Fayl saqlanmaydi.")),
+          h("li", {}, h("span", { class: "n" }, "02"), h("b", {}, "12 ta band tekshiriladi"), h("span", { class: "desc" }, "Har bir xulosa shartnomadan olingan iqtibos va amaldagi qonun moddasi bilan beriladi.")),
+          h("li", {}, h("span", { class: "n" }, "03"), h("b", {}, "Xulosa varagʻini olasiz"), h("span", { class: "desc" }, "Quruvchiga beriladigan tayyor savollar va kutilayotgan qonun boʻyicha prognoz.")))),
+      h("div", { class: "msg note" }, icon("info"), h("span", {}, "Bu dastlabki avtomatik tekshiruv, huquqiy maslahat emas. Rasm va skanerlangan fayllar hozircha oʻqilmaydi."))));
     drawInput();
   }
 
@@ -451,7 +479,7 @@ details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
   let stageTimer;
   function renderLoading(isDemo) {
     const names = ["Matn oʻqilmoqda", "Shaxsiy maʼlumotlar yashirilmoqda", "12 ta band tekshirilmoqda", "Yangi qonun boʻyicha prognoz tuzilmoqda"];
-    const items = names.map((name) => h("li", {}, h("span", { class: "dot" }), name));
+    const items = names.map((name) => h("li", {}, h("span", { class: "box" }), name));
     let current = 0;
     const paint = () => items.forEach((li, n) => {
       li.className = n < current ? "done" : n === current ? "active" : "";
@@ -461,12 +489,13 @@ details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
     clearInterval(stageTimer);
     // Bosqichlar taxminiy: server bitta javob qaytaradi, shuning uchun oxirgi bosqichda kutib turadi.
     if (!isDemo) stageTimer = setInterval(() => { if (current < names.length - 1) { current += 1; paint(); } }, 6500);
-    mount(views.check, h("div", { class: "card progress", role: "status" },
-      h("div", { class: "eyebrow" }, "Tahlil"),
+    const ring = seal({ ring: RING, lines: [" "], inked: false });
+    ring.classList.add("ring");
+    mount(views.check, h("div", { class: "sheet wait", role: "status" },
+      h("div", { class: "spin" }, ring, h("div", { class: "center", style: "position:absolute;inset:0" }, icon("doc"))),
       h("h2", {}, "Shartnomangiz tekshirilmoqda"),
-      h("div", { class: "bar" }, h("i", {})),
-      h("ul", { class: "stages" }, items),
-      h("p", { class: "small muted", style: "margin-top:14px" }, "Odatda yarim daqiqa, uzun shartnomada bir daqiqagacha. Ilovani yopmang.")));
+      h("p", { class: "small muted", style: "margin-top:6px" }, "Odatda yarim daqiqa. Ilovani yopmang."),
+      h("ul", { class: "stages" }, items)));
     window.scrollTo(0, 0);
   }
 
@@ -492,178 +521,165 @@ details.sub > summary .chev { color: var(--brand); width: 18px; height: 18px; }
     } catch { renderForm("Namunani yuklab boʻlmadi."); }
   }
 
-  // ---------- Tekshiruv: natija ----------
-  function lawBlock(law) {
-    return h("div", { class: "law" },
-      h("div", { class: "ref" }, law.ref), h("div", { class: "plain" }, law.plain),
-      h("blockquote", {}, law.text),
-      law.url ? extLink(law.url, "lex.uz da ochish") : null);
-  }
+  // ---------- Tekshiruv: xulosa varagʻi ----------
+  const excerpt = (label, text) => h("div", { class: "excerpt" }, caps(label), h("p", {}, text));
+  const lawBlock = (law) => h("div", { class: "law" },
+    caps(law.ref), h("div", { class: "plain" }, law.plain), excerpt("Hujjat matni", law.text),
+    law.url ? extLink(law.url, "lex.uz da ochish") : null);
 
-  function findingCard(f, open) {
-    const tone = f.group === "bad" ? `sev-${f.severity}` : f.group === "unclear" ? "sev-unclear" : "sev-good";
+  function findingRow(f, open) {
+    const tone = f.group === "bad" ? (f.severity === "yuqori" ? "t-red" : "t-amber") : f.group === "unclear" ? "t-amber" : "t-green";
     const label = f.group === "bad" ? (f.status === "yoq" ? `${SEVERITY[f.severity]} · yozilmagan` : SEVERITY[f.severity]) : f.group === "unclear" ? "Aniqlanmadi" : "Joyida";
     const body = [];
-    if (f.quote) body.push(h("blockquote", {}, f.quote));
-    if (f.unverified) body.push(h("div", { class: "alert" }, icon("alert"), h("span", {}, "Bu iqtibos matndan topilmadi — bandni shartnomadan oʻzingiz tekshiring.")));
-    if (f.explanation) body.push(h("div", { class: "field" }, h("div", { class: "eyebrow" }, "Xulosa"), h("p", {}, f.explanation)));
+    if (f.quote) body.push(excerpt("Shartnomadan", f.quote));
+    if (f.unverified) body.push(h("div", { class: "msg error" }, icon("alert"), h("span", {}, "Bu iqtibos matndan topilmadi — bandni shartnomadan oʻzingiz tekshiring.")));
+    if (f.explanation) body.push(h("div", { class: "field" }, caps("Xulosa"), h("p", {}, f.explanation)));
     if (f.group !== "good") {
-      body.push(h("div", { class: "field" }, h("div", { class: "eyebrow" }, "Nega muhim"), h("p", {}, f.why)));
+      body.push(h("div", { class: "field" }, caps("Nega muhim"), h("p", {}, f.why)));
       body.push(h("div", { class: "ask" },
-        h("div", { class: "row" }, h("div", { class: "eyebrow" }, "Quruvchidan soʻrang"),
-          h("button", { class: "btn compact", type: "button", onclick: () => copy(f.ask, "Savol nusxalandi") }, icon("copy"), "Nusxa")),
+        h("div", { class: "head" }, caps("Quruvchidan soʻrang"),
+          h("button", { class: "btn mini", type: "button", onclick: () => copy(f.ask, "Savol nusxalandi") }, icon("copy"), "Nusxa")),
         h("p", {}, f.ask)));
-      if (f.stat) body.push(h("div", { class: "fact" }, icon("chart"), h("span", {}, f.stat)));
+      if (f.stat) body.push(h("p", { class: "fact" }, f.stat));
     }
     if (f.laws.length) {
-      body.push(h("details", { class: "sub" },
-        h("summary", {}, `Huquqiy asos · ${f.laws.length} ta modda`, chevron()),
-        f.laws.map(lawBlock)));
+      body.push(h("details", { class: "more" }, h("summary", {}, `Huquqiy asos · ${f.laws.length} ta modda`, chevron()), f.laws.map(lawBlock)));
     }
-    const card = h("details", { class: `item ${tone}`, open },
-      h("summary", {}, h("span", { class: "sev" }, icon(f.group === "bad" ? "alert" : f.group === "unclear" ? "help" : "check")),
-        h("span", { class: "head" }, h("span", { class: "label" }, label), h("div", { class: "name" }, f.title)), chevron()),
-      h("div", { class: "body" }, body));
-    return card;
+    return h("details", { class: `row ${tone}`, open },
+      h("summary", {}, h("span", { class: "tag" }, label), h("span", { class: "name" }, f.title), chevron()),
+      h("div", { class: "content" }, body));
   }
-  function chevron() { const c = icon("chevron"); c.classList.add("chev"); return c; }
 
   function verdictOf(report) {
     const bad = report.findings.filter((f) => f.group === "bad");
     const high = bad.filter((f) => f.severity === "yuqori").length;
-    if (high >= 3) return { tone: "high", tag: "Yuqori xavf", title: "Shartnoma hozirgi holida xaridor uchun xavfli" };
-    if (high >= 1 || bad.length >= 3) return { tone: "mid", tag: "Ehtiyot boʻling", title: "Jiddiy kamchiliklar bor — imzolashdan oldin tuzattiring" };
-    if (bad.length) return { tone: "mid", tag: "Kichik kamchiliklar", title: "Bir necha bandni aniqlashtirib oling" };
-    return { tone: "ok", tag: "Yaxshi", title: "Tekshirilgan bandlarda jiddiy muammo topilmadi" };
+    if (high >= 3) return { tone: "high", lines: ["XAVFLI"], title: "Shartnoma hozirgi holida xaridor uchun xavfli" };
+    if (high >= 1 || bad.length >= 3) return { tone: "mid", lines: ["EHTIYOT", "BOʻLING"], title: "Jiddiy kamchiliklar bor — imzolashdan oldin tuzattiring" };
+    if (bad.length) return { tone: "mid", lines: ["KAMCHILIK", "BOR"], title: "Bir necha bandni aniqlashtirib oling" };
+    return { tone: "ok", lines: ["MUAMMO", "TOPILMADI"], title: "Tekshirilgan bandlarda jiddiy muammo topilmadi" };
   }
 
   function renderReport(report, isDemo) {
-    const again = h("button", { class: "btn secondary", type: "button", onclick: () => { state.file = null; state.text = ""; renderForm(); window.scrollTo(0, 0); } },
+    const again = h("button", { class: "btn line", type: "button", onclick: () => { state.file = null; state.text = ""; renderForm(); window.scrollTo(0, 0); } },
       isDemo ? "Oʻz shartnomamni tekshirish" : "Boshqa shartnomani tekshirish");
     if (!report.isHousingContract) {
-      mount(views.check, h("div", { class: "stack" },
-        h("div", { class: "card stack" }, h("div", { class: "eyebrow" }, "Natija"), h("h2", { style: "font-size:21px;letter-spacing:-.02em" }, "Bu uy-joy shartnomasiga oʻxshamaydi"),
+      mount(views.check, h("div", { class: "col gap-16" },
+        h("div", { class: "sheet pad col gap-8" }, caps("Dastlabki tekshiruv xulosasi"),
+          h("h2", { style: "font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.15" }, "Bu uy-joy shartnomasiga oʻxshamaydi"),
           report.summary ? h("p", { class: "muted" }, report.summary) : null),
         again));
       return;
     }
     const bad = report.findings.filter((f) => f.group === "bad");
     const rest = report.findings.filter((f) => f.group !== "bad");
-    const total = report.findings.length;
     const verdict = verdictOf(report);
-    const R = 40, C = 2 * Math.PI * R;
-    const value = h("div", {});
-    value.innerHTML = `<svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="${R}"/><circle class="value" cx="50" cy="50" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>`;
-    const gauge = h("div", { class: "gauge", role: "img", "aria-label": `${total} ta banddan ${bad.length} tasi muammoli` }, value.firstChild,
-      h("div", { class: "num" }, h("b", {}, bad.length), h("span", {}, `/ ${total} band`)));
+    const stamp = seal({ ring: RING, lines: verdict.lines });
+    stamp.classList.add("seal", "in");
 
     const panels = {
-      bad: h("div", { class: "stack" },
-        bad.length ? bad.map((f, n) => findingCard(f, n === 0)) : h("div", { class: "card empty" }, "Muammoli band topilmadi."),
-        report.otherRisks.map((risk) => h("details", { class: "item sev-orta" },
-          h("summary", {}, h("span", { class: "sev" }, icon("alert")), h("span", { class: "head" }, h("span", { class: "label" }, "Roʻyxatdan tashqari"), h("div", { class: "name" }, "Qoʻshimcha xavfli band")), chevron()),
-          h("div", { class: "body" }, h("blockquote", {}, risk.quote),
-            risk.unverified ? h("div", { class: "alert" }, icon("alert"), h("span", {}, "Bu iqtibos matndan topilmadi — oʻzingiz tekshiring.")) : null,
-            h("p", { style: "font-size:15px" }, risk.explanation)))),
-        bad.length ? h("button", { class: "btn", type: "button", onclick: () => copy(bad.map((f, n) => `${n + 1}. ${f.ask}`).join("\n"), "Barcha savollar nusxalandi") }, icon("copy"), "Barcha savollarni nusxalash") : null),
-      rest: h("div", { class: "stack" }, rest.length ? rest.map((f) => findingCard(f, false)) : h("div", { class: "card empty" }, "Bu boʻlimda band yoʻq.")),
-      forecast: h("div", { class: "stack" },
+      bad: h("div", {},
+        bad.length ? bad.map((f, n) => findingRow(f, n === 0)) : h("div", { class: "empty" }, "Muammoli band topilmadi."),
+        report.otherRisks.map((risk) => h("details", { class: "row t-amber" },
+          h("summary", {}, h("span", { class: "tag" }, "Roʻyxatdan tashqari"), h("span", { class: "name" }, "Qoʻshimcha xavfli band"), chevron()),
+          h("div", { class: "content" }, excerpt("Shartnomadan", risk.quote),
+            risk.unverified ? h("div", { class: "msg error" }, icon("alert"), h("span", {}, "Bu iqtibos matndan topilmadi — oʻzingiz tekshiring.")) : null,
+            h("div", { class: "field" }, caps("Xulosa"), h("p", {}, risk.explanation)))))),
+      rest: h("div", {}, rest.length ? rest.map((f) => findingRow(f, false)) : h("div", { class: "empty" }, "Bu boʻlimda band yoʻq.")),
+      forecast: h("div", {},
         report.forecast.length ? [
-          h("div", { class: "notice" }, icon("info"), h("span", {}, h("b", {}, report.upcoming.title), ". ", report.upcoming.status)),
-          report.forecast.map((f) => h("details", { class: `item kind-${f.kind}` },
-            h("summary", {}, h("span", { class: "sev" }, icon(f.kind === "imkoniyat" ? "plus" : "alert")),
-              h("span", { class: "head" }, h("span", { class: "label" }, f.kind === "imkoniyat" ? "Imkoniyat" : "Xavf"), h("div", { class: "name" }, f.title)), chevron()),
-            h("div", { class: "body" }, h("p", { style: "font-size:15px" }, f.explanation),
-              h("div", { class: "field" }, h("div", { class: "eyebrow" }, "Qoida"), h("p", { class: "small muted" }, f.rule))))),
-          h("p", { class: "small muted", style: "padding:0 4px" }, report.upcoming.sourceNote),
-        ] : h("div", { class: "card empty" }, "Bu shartnoma uchun prognoz tuzilmadi.")),
+          h("div", { style: "padding:14px 16px;border-bottom:1px solid var(--rule)" }, caps("Hali kuchga kirmagan"),
+            h("p", { class: "small", style: "margin-top:4px" }, h("b", {}, report.upcoming.title), ". ", report.upcoming.status)),
+          report.forecast.map((f, n) => h("details", { class: `row ${f.kind === "imkoniyat" ? "t-stamp" : "t-red"}`, open: n === 0 },
+            h("summary", {}, h("span", { class: "tag" }, f.kind === "imkoniyat" ? "Imkoniyat" : "Xavf"), h("span", { class: "name" }, f.title), chevron()),
+            h("div", { class: "content" }, h("div", { class: "field" }, caps("Sizning shartnomangiz uchun"), h("p", {}, f.explanation)), excerpt("Qoida", f.rule)))),
+          h("p", { class: "small muted", style: "padding:14px 16px" }, report.upcoming.sourceNote),
+        ] : h("div", { class: "empty" }, "Bu shartnoma uchun prognoz tuzilmadi.")),
     };
     const showPanel = (id) => { for (const [key, el] of Object.entries(panels)) el.hidden = key !== id; };
     showPanel("bad");
-    report.forecast.length && panels.forecast.querySelector("details")?.setAttribute("open", "");
 
     const notes = [];
     if (report.hidden) notes.push(`Tahlildan oldin ${report.hidden} ta shaxsiy maʼlumot yashirildi.`);
     notes.push(report.disclaimer);
 
-    mount(views.check,
-      isDemo ? h("div", { class: "notice", style: "margin-bottom:12px" }, icon("info"), h("span", {}, "Bu namuna: ataylab nuqsonli qilib tuzilgan toʻqima shartnoma boʻyicha haqiqiy tahlil.")) : null,
-      h("div", { class: `card tone-${verdict.tone}` },
-        h("div", { class: "verdict" }, gauge, h("div", {}, h("span", { class: "tag" }, verdict.tag), h("h2", {}, verdict.title))),
-        h("div", { class: "stats" },
-          h("div", { class: "bad" }, h("b", {}, report.counts.bad), h("span", {}, "Muammoli")),
-          h("div", { class: "unclear" }, h("b", {}, report.counts.unclear), h("span", {}, "Aniqlanmadi")),
-          h("div", { class: "good" }, h("b", {}, report.counts.good), h("span", {}, "Joyida"))),
+    mount(views.check, h("div", { class: "col gap-16" },
+      isDemo ? h("div", { class: "msg note" }, icon("info"), h("span", {}, "Bu namuna: ataylab nuqsonli qilib tuzilgan toʻqima shartnoma boʻyicha haqiqiy tahlil.")) : null,
+      h("div", { class: `sheet verdict tone-${verdict.tone}` },
+        h("div", { class: "docline" }, caps("Dastlabki tekshiruv xulosasi"), caps(today())),
+        h("div", { class: "body" }, h("h2", {}, verdict.title), stamp),
+        h("div", { class: "tally" },
+          h("div", { class: "bad" }, h("b", {}, report.counts.bad), caps("Muammoli")),
+          h("div", { class: "unclear" }, h("b", {}, report.counts.unclear), caps("Aniqlanmadi")),
+          h("div", { class: "good" }, h("b", {}, report.counts.good), caps("Joyida"))),
         report.summary ? h("p", { class: "summary" }, report.summary) : null),
-      h("div", { class: "sticky-seg" }, segmented([
-        { id: "bad", label: "Muammolar", count: bad.length + report.otherRisks.length },
-        { id: "rest", label: "Qolganlari", count: rest.length },
-        { id: "forecast", label: "Prognoz", count: report.forecast.length },
-      ], "bad", showPanel)),
-      h("div", { style: "margin-top:8px" }, panels.bad, panels.rest, panels.forecast),
-      h("div", { class: "notice", style: "margin:20px 0 12px" }, icon("info"), h("span", {}, notes.join(" "))),
-      again);
+      h("div", { class: "sheet" },
+        h("div", { class: "sticky" }, tabs([
+          { id: "bad", label: "Muammolar", count: bad.length + report.otherRisks.length },
+          { id: "rest", label: "Qolganlari", count: rest.length },
+          { id: "forecast", label: "Prognoz", count: report.forecast.length },
+        ], "bad", showPanel)),
+        panels.bad, panels.rest, panels.forecast),
+      bad.length ? h("button", { class: "btn", type: "button", onclick: () => copy(bad.map((f, n) => `${n + 1}. ${f.ask}`).join("\n"), "Barcha savollar nusxalandi") }, icon("copy"), `Quruvchiga ${bad.length} ta savolni nusxalash`) : null,
+      again,
+      h("div", { class: "msg note" }, icon("info"), h("span", {}, notes.join(" ")))));
     window.scrollTo(0, 0);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      gauge.querySelector(".value").style.strokeDashoffset = String(C * (1 - (total ? bad.length / total : 0)));
-    }));
   }
 
   // ---------- Qonunlar ----------
   async function renderLaws() {
     if (views.laws.dataset.ready) return;
-    mount(views.laws, h("div", { class: "card progress" }, h("div", { class: "bar" }, h("i", {}))));
+    mount(views.laws, h("div", { class: "empty" }, "Yuklanmoqda…"));
     try {
       const laws = await loadLaws();
       const total = laws.current.reduce((n, doc) => n + doc.provisions.length, 0);
-      mount(views.laws, h("div", { class: "stack-lg" },
-        h("div", { class: "hero" }, h("h1", {}, "Amaldagi qonunlar"),
+      mount(views.laws, h("div", { class: "col gap-24", style: "padding-top:14px" },
+        h("div", { class: "pagehead" }, h("h1", {}, "Amaldagi qonunlar"),
           h("p", {}, "Tekshiruv shu hujjatlarga tayanadi. Matnlar lex.uz dan soʻzma-soʻz olingan."),
-          h("div", { class: "chips" }, h("span", { class: "chip" }, icon("book"), `${laws.current.length} ta hujjat`), h("span", { class: "chip" }, icon("list"), `${total} ta modda`))),
-        laws.current.map((doc) => h("div", {},
-          h("div", { class: "section-head" }, h("h2", {}, doc.title)),
-          h("p", { class: "small muted", style: "margin:-6px 4px 10px" }, `${doc.doc} · ${doc.edition}`),
-          h("div", { class: "stack" },
-            doc.provisions.map((p) => h("details", { class: "item reading" },
-              h("summary", {}, h("span", { class: "head" }, h("span", { class: "label", style: "color:var(--brand)" }, p.ref), h("div", { class: "name" }, p.plain)), chevron()),
-              h("div", { class: "body" }, h("blockquote", {}, p.text)))),
-            h("div", { style: "padding:2px 4px" }, extLink(doc.url, "Toʻliq matn — lex.uz"))))),
-        h("div", { class: "notice" }, icon("info"), h("span", {}, `${laws.note} Yangilangan: ${formatDate(laws.updated)}.`))));
+          h("ul", { class: "facts" }, h("li", {}, h("b", {}, laws.current.length), "hujjat"), h("li", {}, h("b", {}, total), "modda"))),
+        laws.current.map((doc) => h("div", { class: "col gap-8" },
+          h("div", { class: "sec" }, h("h2", {}, doc.title)),
+          h("p", { class: "small muted", style: "padding:0 2px" }, `${doc.doc} · ${doc.edition}`),
+          h("div", { class: "sheet", style: "margin-top:4px" },
+            doc.provisions.map((p) => h("details", { class: "row reading t-stamp" },
+              h("summary", {}, h("span", { class: "tag" }, p.ref), h("span", { class: "name" }, p.plain), chevron()),
+              h("div", { class: "content" }, excerpt("Hujjat matni", p.text))))),
+          h("div", { style: "padding:4px 2px" }, extLink(doc.url, "Toʻliq matn — lex.uz")))),
+        h("div", { class: "msg note" }, icon("info"), h("span", {}, `${laws.note} Yangilangan: ${formatDate(laws.updated)}.`))));
       views.laws.dataset.ready = "1";
     } catch {
-      mount(views.laws, h("div", { class: "alert" }, icon("alert"), h("span", {}, "Qonunlarni yuklab boʻlmadi. Qayta urinib koʻring.")));
+      mount(views.laws, h("div", { class: "msg error" }, icon("alert"), h("span", {}, "Qonunlarni yuklab boʻlmadi. Qayta urinib koʻring.")));
     }
   }
 
   // ---------- Kutilayotgan qonunlar ----------
   async function renderUpcoming() {
     if (views.upcoming.dataset.ready) return;
-    mount(views.upcoming, h("div", { class: "card progress" }, h("div", { class: "bar" }, h("i", {}))));
+    mount(views.upcoming, h("div", { class: "empty" }, "Yuklanmoqda…"));
     try {
       const laws = await loadLaws();
-      const nodes = [h("div", { class: "hero" }, h("h1", {}, "Kutilayotgan qonunlar"),
+      const nodes = [h("div", { class: "pagehead" }, h("h1", {}, "Kutilayotgan qonunlar"),
         h("p", {}, "Hali kuchga kirmagan, lekin uy xaridorlariga taʼsir qiladigan oʻzgarishlar."))];
       for (const law of laws.upcoming) {
         const next = law.stages.findIndex((stage) => !stage.done);
         const groups = { imkoniyat: law.provisions.filter((p) => p.kind === "imkoniyat"), xavf: law.provisions.filter((p) => p.kind === "xavf") };
-        const provisionCard = (p) => h("details", { class: `item kind-${p.kind}` },
-          h("summary", {}, h("span", { class: "sev" }, icon(p.kind === "imkoniyat" ? "plus" : "alert")), h("span", { class: "head" }, h("div", { class: "name" }, p.title)), chevron()),
-          h("div", { class: "body" }, h("p", { style: "font-size:15px" }, p.text), p.source ? extLink(p.source, "Manba") : null));
+        const provisionRow = (p) => h("details", { class: "row reading" },
+          h("summary", {}, h("span", { class: "name", style: "font-weight:700;font-size:15.5px" }, p.title), chevron()),
+          h("div", { class: "content" }, h("p", { style: "font-size:15px" }, p.text), p.source ? extLink(p.source, "Manba") : null));
         nodes.push(
-          h("div", { class: "card stack" },
-            h("div", { class: "eyebrow" }, "Qonun loyihasi"),
-            h("h2", { style: "font-size:19px;line-height:1.25;letter-spacing:-.015em" }, law.title),
-            h("ol", { class: "timeline", style: "margin-top:16px" }, law.stages.map((stage, n) => h("li", { class: stage.done ? "done" : n === next ? "next" : "" },
-              h("span", { class: "mark" }, stage.done ? icon("check") : null),
-              h("div", {}, h("b", {}, stage.name), h("span", {}, stage.done ? (formatDate(stage.date) || "Bajarildi") : n === next ? "Kutilmoqda" : "Navbatda")))))),
-          h("div", {}, h("div", { class: "section-head" }, h("h2", {}, "Xaridor uchun imkoniyatlar"), h("span", {}, `${groups.imkoniyat.length} ta`)), h("div", { class: "stack" }, groups.imkoniyat.map(provisionCard))),
-          h("div", {}, h("div", { class: "section-head" }, h("h2", {}, "Eʼtibor berish kerak"), h("span", {}, `${groups.xavf.length} ta`)), h("div", { class: "stack" }, groups.xavf.map(provisionCard))),
-          h("div", { class: "notice" }, icon("info"), h("span", {}, law.source_note, " ", extLink(law.source, "Gazeta.uz"))));
+          h("div", { class: "sheet pad col gap-16" },
+            h("div", { class: "col gap-8" }, caps("Qonun loyihasi"),
+              h("h2", { style: "font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-.025em" }, law.title)),
+            h("ol", { class: "timeline" }, law.stages.map((stage, n) => h("li", { class: stage.done ? "done" : n === next ? "next" : "" },
+              h("span", { class: "dot" }, stage.done ? icon("check") : null),
+              h("div", {}, h("b", {}, stage.name), caps(stage.done ? (formatDate(stage.date) || "Bajarildi") : n === next ? "Kutilmoqda" : "Navbatda")))))),
+          h("div", { class: "col gap-12" }, h("div", { class: "sec" }, h("h2", {}, "Xaridor uchun imkoniyatlar"), caps(`${groups.imkoniyat.length} ta`)), h("div", { class: "sheet" }, groups.imkoniyat.map(provisionRow))),
+          h("div", { class: "col gap-12" }, h("div", { class: "sec" }, h("h2", {}, "Eʼtibor berish kerak"), caps(`${groups.xavf.length} ta`)), h("div", { class: "sheet" }, groups.xavf.map(provisionRow))),
+          h("div", { class: "msg note" }, icon("info"), h("span", {}, law.source_note, " ", extLink(law.source, "Gazeta.uz"))));
       }
-      mount(views.upcoming, h("div", { class: "stack-lg" }, nodes));
+      mount(views.upcoming, h("div", { class: "col gap-24", style: "padding-top:14px" }, nodes));
       views.upcoming.dataset.ready = "1";
     } catch {
-      mount(views.upcoming, h("div", { class: "alert" }, icon("alert"), h("span", {}, "Maʼlumotni yuklab boʻlmadi. Qayta urinib koʻring.")));
+      mount(views.upcoming, h("div", { class: "msg error" }, icon("alert"), h("span", {}, "Maʼlumotni yuklab boʻlmadi. Qayta urinib koʻring.")));
     }
   }
 

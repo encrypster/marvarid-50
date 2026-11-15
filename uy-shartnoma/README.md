@@ -20,6 +20,29 @@ Manzil: `https://uy-shartnoma-bot.encrypster.workers.dev` (Cloudflare Workers).
 | Sinov shartnomalari: nuqsonli va adolatli | `samples/` |
 | Python nusxasi (Render yoki oʻz server uchun) | `shartnoma/` |
 
+## Brend
+
+Gʻoya: hujjat va muhr. Oʻzbek hujjatlarida ishonch belgisi dumaloq koʻk muhr,
+shuning uchun u logotip, bot rasmi va xulosa varagʻidagi baho belgisi sifatida
+ishlatiladi. Qolgan hamma narsa sokin: oq varaq, siyoh-qora matn, ingichka
+chiziqlar.
+
+| Element | Qiymat |
+|---|---|
+| Asosiy rang (muhr siyohi) | `#2A3FC7`, tungi rejimda `#96A3FF` |
+| Matn / fon | `#0F1430` / `#ECEEF4`, varaq `#FFFFFF` |
+| Holat ranglari | xavf `#C2331F`, ehtiyot `#96590A`, joyida `#1B7548` |
+| Matn va sarlavha shrifti | Onest (oʻzbekcha ʻ va kirillni qamraydi) |
+| Iqtibos, yorliq va muhr yozuvi | IBM Plex Mono |
+| Logotip va bot rasmi | `brand/logo-mark.svg`, `brand/avatar-512.png` |
+
+Shriftlar (SIL OFL litsenziyasi) ilovaning oʻzidan beriladi: `worker/src/fonts/`.
+Xulosa varagʻidagi muhr yozuvi bahoga qarab oʻzgaradi: "XAVFLI", "EHTIYOT
+BOʻLING", "KAMCHILIK BOR" yoki "MUAMMO TOPILMADI". Aylana boʻylab har doim
+"DASTLABKI TEKSHIRUV" yoziladi — bu rasmiy tasdiq emasligini bildiradi.
+
+Bot profili (nomi, tavsifi, rasmi) Bot API orqali oʻrnatilgan.
+
 ## Tahlil qanday ishlaydi
 
 1. Fayl matnga aylantiriladi (PDF, DOCX, TXT; Cloudflare `toMarkdown`).
