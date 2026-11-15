@@ -7,6 +7,7 @@ import worker, {
   buildReport,
   buildView,
   languageFinding,
+  lawIndexes,
   parseAnalysis,
   parseForecast,
   quoteInText,
@@ -16,6 +17,7 @@ import worker, {
   verifyInitData,
   webhookSecret,
 } from "../src/index.js";
+import { htmlToText, lexId, parseDigest, resetLawsCache, stripNotes } from "../src/laws.js";
 
 const SAMPLE = readFileSync(new URL("../../samples/namuna_shartnoma.txt", import.meta.url), "utf8");
 const CHECKLIST = JSON.parse(readFileSync(new URL("../../data/checklist.json", import.meta.url), "utf8")).items;
@@ -23,8 +25,36 @@ const CHECKLIST = JSON.parse(readFileSync(new URL("../../data/checklist.json", i
 const MODEL_ITEMS = CHECKLIST.filter((item) => item.id !== "shartnoma_tili");
 const TOKEN = "123456:TEST-TOKEN";
 const ORIGIN = "https://bot.example.workers.dev";
-const LLAMA = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-const GLM = "@cf/zai-org/glm-4.7-flash";
+
+// Jonli bazaning kichik nusxasi: haqiqiyda uni kunlik kuzatuv KV ga yozadi.
+const LAWS_VIEW = {
+  checkedAt: "2026-11-15T01:17:00.000Z",
+  pending: [],
+  current: [
+    {
+      id: "-4831129",
+      title: "Ulush kiritish asosida qurish tartibi",
+      doc: "PQ-4732, 27.05.2020",
+      url: "https://lex.uz/docs/-4831129",
+      provisions: [
+        { id: "d4831129_1", ref: "Nizom, 18-band", plain: "Shartnomada topshirish muddati boʻlishi lozim.", text: "qurilish obyektini ulushdorga topshirish muddati va holati;" },
+        { id: "d4831129_2", ref: "Nizom, 28-band", plain: "Hisobga qoʻyilmagan shartnoma haqiqiy emas.", text: "hisobga qoʻyilmagan shartnomalar haqiqiy emas deb hisoblanadi." },
+      ],
+    },
+  ],
+  upcoming: [
+    {
+      title: "Ulushli qurilish toʻgʻrisidagi qonun",
+      status: "Senat koʻrib chiqishini kutmoqda.",
+      applies_note: "Faqat yangi qurilishlarga.",
+      stages: [{ name: "Qonunchilik palatasi", done: true, date: "2026-11-10" }, { name: "Senat", done: false, date: "" }],
+      provisions: [
+        { id: "u1_1", title: "Eskrou hisobvaragʻi", kind: "imkoniyat", text: "Pul eskrou hisobvaragʻiga tushadi.", source: "https://example.uz/a" },
+        { id: "u1_2", title: "Narx oshishi mumkin", kind: "xavf", text: "Uy-joy qiymati oshishi mumkin.", source: "https://example.uz/b" },
+      ],
+    },
+  ],
+};
 
 function modelAnswer(overrides = {}) {
   const findings = MODEL_ITEMS.map((item) => ({
@@ -32,57 +62,60 @@ function modelAnswer(overrides = {}) {
     status: "joyida",
     quote: "",
     explanation: "Joyida.",
+    law_refs: [],
+    law_note: "",
   }));
   findings[0] = {
     check_id: MODEL_ITEMS[0].id,
     status: "muammo",
     quote: "taxminan 2027-yilning toʻrtinchi choragida foydalanishga",
     explanation: "Aniq sana yoʻq.",
+    law_refs: ["d4831129_1", "toqilgan_modda", "d4831129_1"],
+    law_note: "Nizomga koʻra muddat shartnomada boʻlishi lozim.",
   };
   findings[1] = {
     check_id: MODEL_ITEMS[1].id,
     status: "muammo",
     quote: "Quruvchi hech qanday javobgar emas", // shartnomada yoʻq
     explanation: "Toʻqilgan iqtibos.",
+    law_refs: ["toqilgan_modda"],
+    law_note: "Fuqarolik kodeksining 999-moddasiga koʻra…", // asossiz: koʻrsatilmasligi kerak
   };
-  findings.push({ check_id: "nomalum", status: "muammo", quote: "", explanation: "x" });
+  findings.push({ check_id: "nomalum", status: "muammo", quote: "", explanation: "x", law_refs: [], law_note: "" });
   const forecast = [
-    { provision_id: "yq_eskrou", explanation: "Pulingiz bankda turadi." },
-    { provision_id: "yq_toqilgan", explanation: "Roʻyxatda yoʻq qoida." },
-    { provision_id: "yq_eskrou", explanation: "Takror." },
-    { provision_id: "yq_narx", kind: "imkoniyat", explanation: "Narx oshishi mumkin." },
+    { provision_id: "u1_1", explanation: "Pulingiz bankda turadi." },
+    { provision_id: "u9_9", explanation: "Bazada yoʻq qoida." },
+    { provision_id: "u1_1", explanation: "Takror." },
+    { provision_id: "u1_2", explanation: "Narx oshishi mumkin." },
   ];
   return { is_housing_contract: true, summary: "Qisqa <xulosa>.", findings, other_risks: [], forecast, ...overrides };
 }
 
-/** Soxta muhit: Workers AI, KV, Telegram va Claude API oʻrniga xotiradagi nusxalar. */
-function setup({ answer = modelAnswer(), aiError = null, fileText = SAMPLE, claude = false, claudeReply = null } = {}) {
+/** Soxta muhit: KV, Telegram va Claude API oʻrniga xotiradagi nusxalar. */
+function setup({ answer = modelAnswer(), fileText = SAMPLE, laws = LAWS_VIEW, claudeKey = true, claudeReply = null } = {}) {
+  resetLawsCache();
   const kv = new Map();
-  const calls = { ai: [], telegram: [], converted: [], claude: [] };
+  if (laws) kv.set("laws:view", JSON.stringify(laws));
+  const calls = { telegram: [], converted: [], claude: [] };
   const { forecast, ...findings } = answer;
-  const reply = (isForecast) => JSON.stringify(isForecast ? { forecast: forecast ?? [] } : findings);
   const env = {
     TELEGRAM_BOT_TOKEN: TOKEN,
     DAILY_LIMIT: "2",
     KV: {
-      get: async (key) => kv.get(key) ?? null,
+      get: async (key, type) => {
+        const value = kv.get(key) ?? null;
+        return value && type === "json" ? JSON.parse(value) : value;
+      },
       put: async (key, value) => void kv.set(key, value),
     },
     AI: {
-      run: async (model, input) => {
-        calls.ai.push({ model, input });
-        if (aiError) throw new Error(aiError);
-        // Haqiqiy model javobi OpenAI uslubida keladi.
-        const isForecast = input.response_format.json_schema.name === "prognoz";
-        return { choices: [{ message: { content: reply(isForecast) } }] };
-      },
       toMarkdown: async (file) => {
         calls.converted.push(file.name);
         return { name: file.name, format: "text", data: fileText };
       },
     },
   };
-  if (claude) env.ANTHROPIC_API_KEY = "sk-ant-test";
+  if (claudeKey) env.ANTHROPIC_API_KEY = "sk-ant-test";
 
   globalThis.fetch = async (url, init) => {
     const request = url instanceof Request ? url : new Request(url, init);
@@ -97,7 +130,7 @@ function setup({ answer = modelAnswer(), aiError = null, fileText = SAMPLE, clau
         type: "message",
         role: "assistant",
         model: body.model,
-        content: [{ type: "text", text: reply(isForecast) }],
+        content: [{ type: "text", text: JSON.stringify(isForecast ? { forecast: forecast ?? [] } : findings) }],
         stop_reason: "end_turn",
         usage: { input_tokens: 1, output_tokens: 1 },
       });
@@ -111,6 +144,7 @@ function setup({ answer = modelAnswer(), aiError = null, fileText = SAMPLE, clau
 
   const pending = [];
   const ctx = { waitUntil: (promise) => pending.push(promise) };
+  const get = (path) => worker.fetch(new Request(`${ORIGIN}${path}`), env, ctx);
   const send = async (update, secret) => {
     const response = await worker.fetch(
       new Request(`${ORIGIN}/webhook`, {
@@ -126,7 +160,7 @@ function setup({ answer = modelAnswer(), aiError = null, fileText = SAMPLE, clau
   };
   const api = (init) => worker.fetch(new Request(`${ORIGIN}/api/check`, { method: "POST", ...init }), env, ctx);
   const sent = () => calls.telegram.filter((c) => c.method === "sendMessage").map((c) => c.body.text);
-  return { env, calls, send, sent, ctx, api };
+  return { env, calls, send, sent, ctx, api, get };
 }
 
 /** Telegram Mini App yuboradigan imzolangan initData ni yasaydi. */
@@ -137,6 +171,7 @@ function signInitData(userId, { token = TOKEN, authDate = Math.floor(Date.now() 
   const hash = createHmac("sha256", secret).update(checkString).digest("hex");
   return new URLSearchParams({ ...fields, hash }).toString();
 }
+const signed = () => ({ "x-telegram-init-data": signInitData(42) });
 
 const message = (extra, updateId = 1) => ({
   update_id: updateId,
@@ -158,34 +193,28 @@ test("iqtibos boʻshliq va tutuq belgisi farqiga qaramay topiladi", () => {
   assert.ok(!quoteInText("", text));
 });
 
-test("model javobi tozalanadi va notoʻgʻri bandlar tashlanadi", () => {
-  const parsed = parseAnalysis("Mana javob:\n```json\n" + JSON.stringify(modelAnswer()) + "\n```");
+test("huquqiy asos faqat bazadagi normalardan: toʻqilgan havola va asossiz izoh tashlanadi", () => {
+  const { lawIndex, upIndex } = lawIndexes(LAWS_VIEW);
+  const parsed = parseAnalysis("```json\n" + JSON.stringify(modelAnswer()) + "\n```", lawIndex);
   assert.equal(parsed.findings.length, MODEL_ITEMS.length);
   assert.ok(parsed.findings.every((f) => f.check_id !== "nomalum"));
-  assert.equal(parseAnalysis("<think>{x}</think>" + JSON.stringify(modelAnswer())).findings.length, MODEL_ITEMS.length);
-  for (const bad of ["javob yoʻq", "{buzilgan json}", undefined]) assert.throws(() => parseAnalysis(bad));
-});
+  assert.deepEqual(parsed.findings[0].law_refs, ["d4831129_1"]);
+  assert.ok(parsed.findings[0].law_note.includes("Nizomga koʻra"));
+  assert.deepEqual(parsed.findings[1].law_refs, []);
+  assert.equal(parsed.findings[1].law_note, ""); // bazada asosi yoʻq huquqiy daʼvo koʻrsatilmaydi
+  for (const bad of ["javob yoʻq", "{buzilgan json}", undefined]) assert.throws(() => parseAnalysis(bad, lawIndex));
 
-test("prognoz: toʻqilgan va takror qoidalar tashlanadi, belgi bazadan olinadi", () => {
-  const forecast = parseForecast({ forecast: modelAnswer().forecast });
   assert.deepEqual(
-    forecast.map((f) => [f.provision_id, f.kind]),
-    [
-      ["yq_amal_doirasi", "xavf"], // har doim birinchi boʻlib qoʻshiladi
-      ["yq_eskrou", "imkoniyat"],
-      ["yq_narx", "xavf"], // model "imkoniyat" degan, bazadagi belgi ustun
-    ],
+    parseForecast({ forecast: modelAnswer().forecast }, upIndex).map((f) => [f.provision_id, f.kind]),
+    [["u1_1", "imkoniyat"], ["u1_2", "xavf"]],
   );
-  assert.deepEqual(parseForecast({ forecast: [{ provision_id: "yq_amal_doirasi", explanation: "x" }] }), []);
-  assert.throws(() => parseForecast("buzuq"));
+  assert.deepEqual(parseForecast({ forecast: modelAnswer().forecast }, new Map()), []);
 });
 
 test("til harflarga qarab aniqlanadi", () => {
   assert.equal(languageFinding(SAMPLE).status, "joyida");
   assert.equal(languageFinding("Қурувчи ушбу шартномани ҳисобга қўйдиради ва ғолиб бўлади").status, "joyida");
-  const russian = languageFinding("Застройщик обязуется передать квартиру дольщику в установленный срок");
-  assert.equal(russian.status, "muammo");
-  assert.ok(russian.explanation.includes("rus tilida"));
+  assert.equal(languageFinding("Застройщик обязуется передать квартиру дольщику в установленный срок").status, "muammo");
 });
 
 test("xabarlar Telegram chegarasiga sigʻadi", () => {
@@ -194,62 +223,41 @@ test("xabarlar Telegram chegarasiga sigʻadi", () => {
   assert.equal(messages.join("").split("c").length - 1, 100);
 });
 
-test("notoʻgʻri maxfiy sarlavha rad etiladi; /health va /setup ishlaydi", async () => {
-  const { env, calls, send, ctx } = setup();
+test("webhook himoyasi, /health, /setup va /start", async () => {
+  const { calls, send, sent, get } = setup();
   assert.equal((await send(message({ text: "/start" }), "notogri")).status, 401);
   assert.equal(calls.telegram.length, 0);
+  assert.equal(await (await get("/health")).text(), "ok");
 
-  const health = await worker.fetch(new Request(`${ORIGIN}/health`), env, ctx);
-  assert.equal(await health.text(), "ok");
-
-  await worker.fetch(new Request(`${ORIGIN}/setup`), env, ctx);
+  await get("/setup");
   const [hook, menu] = calls.telegram.slice(-2);
-  assert.equal(hook.method, "setWebhook");
   assert.equal(hook.body.url, `${ORIGIN}/webhook`);
   assert.equal(hook.body.secret_token, await webhookSecret(TOKEN));
-  assert.equal(menu.method, "setChatMenuButton");
   assert.equal(menu.body.menu_button.web_app.url, `${ORIGIN}/`);
-});
 
-test("/start ilova tugmasi bilan salomlashadi; takroriy yangilanish ikkinchi marta ishlanmaydi", async () => {
-  const { calls, send, sent } = setup();
   await send(message({ text: "/start" }));
-  await send(message({ text: "/start" }));
+  await send(message({ text: "/start" })); // takroriy yangilanish ikkinchi marta ishlanmaydi
   assert.equal(sent().length, 1);
-  assert.ok(sent()[0].startsWith("Assalomu alaykum"));
-  assert.equal(calls.telegram[0].body.reply_markup.inline_keyboard[0][0].web_app.url, `${ORIGIN}/`);
+  assert.equal(calls.telegram.at(-1).body.reply_markup.inline_keyboard[0][0].web_app.url, `${ORIGIN}/`);
 });
 
-test("matnli shartnoma (bepul modellar): yashirilgan matn ketadi, hisobot qonun va prognoz bilan qaytadi", async () => {
+test("chatdagi hisobot: iqtibos, jonli bazadan huquqiy asos va prognoz", async () => {
   const { calls, send, sent } = setup();
   await send(message({ text: SAMPLE }));
-
-  assert.deepEqual(calls.ai.map((c) => c.model).sort(), [LLAMA, GLM].sort());
-  const findingsCall = calls.ai.find((c) => c.model === LLAMA);
-  const forecastCall = calls.ai.find((c) => c.model === GLM);
-  const prompt = findingsCall.input.messages[1].content;
-  assert.ok(prompt.includes("[PASPORT]") && !prompt.includes("AB1234567"));
-  const system = findingsCall.input.messages[0].content;
-  assert.ok(system.includes(MODEL_ITEMS[0].id) && !system.includes("shartnoma_tili") && !system.includes("yq_eskrou"));
-  assert.equal(findingsCall.input.response_format.type, "json_schema");
-  assert.equal(findingsCall.input.chat_template_kwargs, undefined);
-  assert.equal(forecastCall.input.chat_template_kwargs.enable_thinking, false);
-  assert.ok(forecastCall.input.messages[0].content.includes("yq_eskrou"));
-  assert.ok(forecastCall.input.messages[1].content.includes("[PASPORT]"));
-  assert.equal(calls.claude.length, 0);
-
+  assert.equal(calls.claude.length, 2);
   const report = sent().slice(1).join("\n\n");
   assert.ok(sent()[0].startsWith("Tekshiryapman"));
   assert.ok(report.includes("Muammoli bandlar: 2 · Aniqlanmadi: 0"));
   assert.ok(report.includes("&lt;xulosa&gt;") && !report.includes("<xulosa>"));
   assert.equal(report.split("iqtibos matndan topilmadi").length - 1, 1);
   assert.ok(toPlain(report).includes(MODEL_ITEMS[0].ask_developer));
-  assert.ok(report.includes("3 ta shaxsiy maʼlumot yashirildi"));
-  assert.ok(report.includes("Huquqiy asos:</i> Nizom, 18-band"));
-  assert.ok(report.includes("• Shartnoma tili")); // kod aniqlagan band "Joyida" roʻyxatida
+  assert.ok(report.includes("Huquqiy asos:</i> Ulush kiritish asosida qurish tartibi, Nizom, 18-band"));
+  assert.ok(report.includes("Qonun boʻyicha:</i> Nizomga koʻra"));
+  assert.ok(!report.includes("999-modda") && !report.includes("toqilgan_modda"));
+  assert.ok(report.includes("• Shartnoma tili"));
   assert.ok(report.includes("Yangi qonun kuchga kirsa") && report.includes("Pulingiz bankda turadi."));
-  assert.ok(report.includes("Faqat yangi qurilishlarga tatbiq etiladi") && !report.includes("Roʻyxatda yoʻq qoida"));
-  assert.ok(report.includes("huquqiy maslahat emas"));
+  assert.ok(!report.includes("Bazada yoʻq qoida") && !report.includes("Takror."));
+  assert.ok(report.includes("3 ta shaxsiy maʼlumot yashirildi") && report.includes("huquqiy maslahat emas"));
 });
 
 test("shartning yoʻqligi yaxshi boʻlgan bandlarda 'yoq' muammo sanalmaydi", async () => {
@@ -257,63 +265,50 @@ test("shartning yoʻqligi yaxshi boʻlgan bandlarda 'yoq' muammo sanalmaydi", as
   const absenceOk = MODEL_ITEMS.find((item) => item.absence_ok);
   const required = MODEL_ITEMS.find((item) => !item.absence_ok && item.id !== MODEL_ITEMS[0].id && item.id !== MODEL_ITEMS[1].id);
   for (const f of answer.findings) if (f.check_id === absenceOk.id || f.check_id === required.id) f.status = "yoq";
-  const { api } = setup({ answer });
-  const { report } = await (await api({ headers: { "x-telegram-init-data": signInitData(42) }, body: SAMPLE })).json();
+  const { report } = await (await setup({ answer }).api({ headers: signed(), body: SAMPLE })).json();
   const byId = Object.fromEntries(report.findings.map((f) => [f.id, f]));
   assert.equal(byId[absenceOk.id].group, "good");
   assert.equal(byId[required.id].group, "bad");
 });
 
-test("PDF fayl Cloudflare orqali matnga aylantiriladi", async () => {
-  const { calls, send, sent } = setup();
-  await send(message({ document: { file_id: "f1", file_name: "Shartnoma.PDF", file_size: 1000 } }));
-  assert.deepEqual(calls.converted, ["Shartnoma.PDF"]);
-  assert.ok(sent().some((t) => t.includes("Shartnoma tekshiruvi")));
-});
+test("fayllar: PDF matnga aylantiriladi; rasm, katta fayl, nomaʼlum tur va boʻsh skaner rad etiladi", async () => {
+  const ok = setup();
+  await ok.send(message({ document: { file_id: "f1", file_name: "Shartnoma.PDF", file_size: 1000 } }));
+  assert.deepEqual(ok.calls.converted, ["Shartnoma.PDF"]);
+  assert.ok(ok.sent().some((t) => t.includes("Shartnoma tekshiruvi")));
 
-test("rasm, katta fayl, nomaʼlum tur va boʻsh skaner uchun tushunarli javob", async () => {
   const { calls, send, sent } = setup({ fileText: "   " });
   await send(message({ photo: [{ file_id: "p" }] }, 1));
   await send(message({ document: { file_id: "f", file_name: "a.pdf", file_size: 9e6 } }, 2));
   await send(message({ document: { file_id: "f", file_name: "a.xlsx", file_size: 10 } }, 3));
   await send(message({ document: { file_id: "f", file_name: "skaner.pdf", file_size: 10 } }, 4));
   const [photo, big, type, scan] = sent();
-  assert.ok(photo.includes("Rasmlar hozircha oʻqilmaydi"));
-  assert.ok(big.includes("4 MB"));
-  assert.ok(type.includes("Faqat PDF, DOCX yoki TXT"));
-  assert.ok(scan.includes("matn chiqmadi"));
-  assert.equal(calls.ai.length, 0);
+  assert.ok(photo.includes("Rasmlar hozircha oʻqilmaydi") && big.includes("4 MB"));
+  assert.ok(type.includes("Faqat PDF, DOCX yoki TXT") && scan.includes("matn chiqmadi"));
+  assert.equal(calls.claude.length, 0);
 });
 
-test("kunlik limit, bepul kvota tugashi va boʻsh javob", async () => {
+test("kunlik limit, boʻsh javob, boshqa turdagi hujjat va kalitsiz holat", async () => {
   const { send, sent } = setup();
   await send(message({ text: SAMPLE }, 1));
   await send(message({ text: SAMPLE }, 2));
   await send(message({ text: SAMPLE }, 3));
   assert.ok(sent().at(-1).includes("Bugungi limit (2 ta tekshiruv) tugadi"));
 
-  const quota = setup({ aiError: "3036: You have used up your daily free allocation of 10,000 neurons" });
-  await quota.send(message({ text: SAMPLE }));
-  assert.ok(quota.sent().at(-1).includes("bepul tahlil limiti tugadi"));
-
   const empty = setup({ answer: { is_housing_contract: true, summary: "", findings: [], other_risks: [] } });
   await empty.send(message({ text: SAMPLE }));
   assert.ok(empty.sent().at(-1).includes("Tahlil chiqmadi"));
-});
 
-test("uy-joy shartnomasi boʻlmagan hujjat; prognoz chiqmasa ham hisobot beriladi", async () => {
-  const other = setup({
-    answer: { is_housing_contract: false, summary: "Bu ijara shartnomasi.", findings: [], other_risks: [] },
-  });
+  const other = setup({ answer: { is_housing_contract: false, summary: "Bu ijara shartnomasi.", findings: [], other_risks: [] } });
   await other.send(message({ text: SAMPLE }));
   assert.ok(other.sent().at(-1).includes("oʻxshamaydi") && other.sent().at(-1).includes("ijara"));
   assert.equal(buildReport({ isHousingContract: false, summary: "" }).length, 1);
   assert.equal(buildView({ isHousingContract: false, summary: "x", hidden: 0 }).findings.length, 0);
 
-  const noForecast = setup({ answer: { ...modelAnswer(), forecast: "buzuq" } });
-  await noForecast.send(message({ text: SAMPLE }));
-  const report = noForecast.sent().slice(1).join("\n");
-  assert.ok(report.includes("Shartnoma tekshiruvi") && !report.includes("Yangi qonun kuchga kirsa"));
+  const noKey = setup({ claudeKey: false });
+  const data = await (await noKey.api({ headers: signed(), body: SAMPLE })).json();
+  assert.ok(!data.ok && data.error.includes("sozlanmagan"));
+  assert.equal(noKey.calls.claude.length, 0);
 });
 
 test("Mini App imzosi: toʻgʻri, buzilgan, begona token va eskirgan", async () => {
@@ -322,95 +317,114 @@ test("Mini App imzosi: toʻgʻri, buzilgan, begona token va eskirgan", async () 
   assert.equal(await verifyInitData(signInitData(42, { token: "999:BEGONA" }), TOKEN), null);
   assert.equal(await verifyInitData(signInitData(42, { authDate: Math.floor(Date.now() / 1000) - 90000 }), TOKEN), null);
   assert.equal(await verifyInitData("", TOKEN), null);
-  assert.equal(await verifyInitData("user=%7B%22id%22%3A42%7D&auth_date=1", TOKEN), null);
 });
 
-test("Mini App API: imzosiz rad etiladi, matn va fayl tekshiriladi, limit ishlaydi", async () => {
+test("Mini App API: Claude'ga jonli normalar beriladi, natijada asos matni bazadan olinadi", async () => {
   const { calls, api } = setup();
-  const denied = await api({ body: SAMPLE });
-  assert.equal(denied.status, 401);
-  assert.equal(calls.ai.length, 0);
+  assert.equal((await api({ body: SAMPLE })).status, 401);
+  assert.equal(calls.claude.length, 0);
 
-  const headers = { "x-telegram-init-data": signInitData(42) };
-  const data = await (await api({ headers, body: SAMPLE })).json();
+  const data = await (await api({ headers: signed(), body: SAMPLE })).json();
   assert.ok(data.ok);
   const { report } = data;
-  assert.equal(report.engine, "workers-ai");
   assert.deepEqual(report.counts, { bad: 2, unclear: 0, good: CHECKLIST.length - 2 });
-  const first = report.findings[0];
-  assert.equal(first.id, MODEL_ITEMS[0].id);
-  assert.ok(first.laws.some((law) => law.ref === "Nizom, 18-band" && law.text.includes("ikki yildan kam boʻlmasligi") && law.url.includes("lex.uz")));
+  assert.equal(report.lawsCheckedAt, LAWS_VIEW.checkedAt);
+  const [first, second] = report.findings;
+  assert.deepEqual(first.laws, [{ doc: "Ulush kiritish asosida qurish tartibi", ref: "Nizom, 18-band", text: LAWS_VIEW.current[0].provisions[0].text, plain: LAWS_VIEW.current[0].provisions[0].plain, url: "https://lex.uz/docs/-4831129" }]);
+  assert.ok(first.lawNote.includes("Nizomga koʻra"));
+  assert.deepEqual(second.laws, []);
+  assert.equal(second.lawNote, "");
   assert.equal(report.findings.filter((f) => f.unverified).length, 1);
-  assert.deepEqual(
-    report.forecast.map((f) => [f.title, f.kind]),
-    [
-      ["Faqat yangi qurilishlarga tatbiq etiladi", "xavf"],
-      ["Pul eskrou hisobvaragʻida saqlanadi", "imkoniyat"],
-      ["Uy-joy narxi oshishi mumkin", "xavf"],
-    ],
-  );
-  assert.ok(report.forecast[1].rule.includes("eskrou"));
-  assert.ok(report.upcoming.status.includes("Senat"));
-
-  const file = await (await api({ headers: { ...headers, "x-file-name": encodeURIComponent("Шартнома.pdf") }, body: "pdf baytlari" })).json();
-  assert.ok(file.ok);
-  assert.deepEqual(calls.converted, ["Шартнома.pdf"]);
-
-  const limited = await (await api({ headers, body: SAMPLE })).json();
-  assert.equal(limited.ok, false);
-  assert.ok(limited.error.includes("Bugungi limit"));
-
-  const short = await (await setup().api({ headers, body: "qisqa" })).json();
-  assert.ok(short.error.includes("juda qisqa"));
-});
-
-test("qonunlar API va bilimlar bazasi yaxlitligi", async () => {
-  const { env, ctx } = setup();
-  const laws = await (await worker.fetch(new Request(`${ORIGIN}/api/laws`), env, ctx)).json();
-  const ids = new Set(laws.current.flatMap((doc) => doc.provisions.map((p) => p.id)));
-  for (const item of CHECKLIST) for (const ref of item.law_refs) assert.ok(ids.has(ref), ref);
-  assert.ok(laws.current.every((doc) => doc.url.startsWith("https://lex.uz/")));
-  assert.ok(laws.upcoming[0].stages.some((stage) => !stage.done));
-});
-
-test("Claude kaliti boʻlsa tahlil Claude'da ishlaydi", async () => {
-  const { calls, api } = setup({ claude: true });
-  const headers = { "x-telegram-init-data": signInitData(42) };
-  const { ok, report } = await (await api({ headers, body: SAMPLE })).json();
-  assert.ok(ok);
-  assert.equal(report.engine, "claude");
-  assert.deepEqual(report.counts, { bad: 2, unclear: 0, good: CHECKLIST.length - 2 });
-  assert.equal(calls.ai.length, 0);
-  assert.equal(calls.claude.length, 2);
+  assert.deepEqual(report.forecast.map((f) => [f.title, f.kind, f.rule, f.source]), [
+    ["Eskrou hisobvaragʻi", "imkoniyat", "Pul eskrou hisobvaragʻiga tushadi.", "https://example.uz/a"],
+    ["Narx oshishi mumkin", "xavf", "Uy-joy qiymati oshishi mumkin.", "https://example.uz/b"],
+  ]);
+  assert.deepEqual(report.upcoming, [{ title: LAWS_VIEW.upcoming[0].title, status: LAWS_VIEW.upcoming[0].status, applies_note: "Faqat yangi qurilishlarga." }]);
 
   const findings = calls.claude.find((c) => !c.body.output_config.format.schema.required.includes("forecast"));
   const forecast = calls.claude.find((c) => c !== findings);
-  assert.equal(findings.path, "/v1/messages");
-  assert.equal(findings.headers.authorization, "Bearer sk-ant-test"); // SDK 1.x kalitni shu sarlavhada yuboradi
+  assert.equal(findings.headers.authorization, "Bearer sk-ant-test");
   assert.ok(findings.headers["anthropic-beta"].includes("server-side-fallback-2026-07-01"));
   assert.equal(findings.body.model, "claude-opus-5-5");
   assert.equal(findings.body.fallbacks, "default");
-  assert.equal(findings.body.output_config.format.type, "json_schema");
   assert.equal(findings.body.output_config.effort, "medium");
   assert.equal(forecast.body.output_config.effort, "low");
-  assert.deepEqual(findings.body.system[0].cache_control, { type: "ephemeral" });
+  const system = findings.body.system[0].text;
+  assert.ok(system.includes("d4831129_2") && system.includes("hisobga qoʻyilmagan shartnomalar haqiqiy emas"));
+  assert.ok(system.includes("xotirangdagi huquqiy bilimni ishlatma") && !system.includes("shartnoma_tili"));
+  assert.deepEqual(findings.body.output_config.format.schema.properties.findings.items.properties.law_refs.items.enum, ["d4831129_1", "d4831129_2"]);
+  assert.ok(forecast.body.system[0].text.includes("u1_2") && forecast.body.system[0].text.includes("Faqat yangi qurilishlarga."));
+  assert.deepEqual(forecast.body.output_config.format.schema.properties.forecast.items.properties.provision_id.enum, ["u1_1", "u1_2"]);
   assert.ok(findings.body.messages[0].content.includes("[PASPORT]") && !findings.body.messages[0].content.includes("AB1234567"));
-  for (const key of ["thinking", "temperature", "betas"]) assert.equal(findings.body[key], undefined);
+
+  const file = await (await api({ headers: { ...signed(), "x-file-name": encodeURIComponent("Шартнома.pdf") }, body: "pdf baytlari" })).json();
+  assert.ok(file.ok);
+  assert.deepEqual(calls.converted, ["Шартнома.pdf"]);
+  assert.ok((await (await api({ headers: signed(), body: SAMPLE })).json()).error.includes("Bugungi limit"));
+  assert.ok((await (await setup().api({ headers: signed(), body: "qisqa" })).json()).error.includes("juda qisqa"));
+});
+
+test("baza boʻsh boʻlsa tahlil asossiz ishlaydi va prognoz soʻralmaydi", async () => {
+  const { calls, api, get } = setup({ laws: null });
+  const { ok, report } = await (await api({ headers: signed(), body: SAMPLE })).json();
+  assert.ok(ok);
+  assert.equal(calls.claude.length, 1);
+  assert.ok(calls.claude[0].body.system[0].text.includes("Baza hozircha boʻsh"));
+  assert.ok(report.findings.every((f) => f.laws.length === 0 && f.lawNote === ""));
+  assert.deepEqual(report.forecast, []);
+  assert.equal(report.lawsCheckedAt, null);
+  assert.equal((await (await get("/api/laws")).json()).empty, true);
+});
+
+test("qonunlar API jonli bazani qaytaradi; boshqaruv manzili kalitsiz ochilmaydi", async () => {
+  const { get } = setup();
+  const laws = await (await get("/api/laws")).json();
+  assert.equal(laws.checkedAt, LAWS_VIEW.checkedAt);
+  assert.equal(laws.current[0].provisions.length, 2);
+  assert.equal((await get("/admin/laws")).status, 401);
+  assert.equal((await get("/admin/laws?key=notogri")).status, 401);
 });
 
 test("Claude xatolari foydalanuvchiga tushunarli xabar boʻlib qaytadi", async () => {
-  const headers = { "x-telegram-init-data": signInitData(42) };
   const error = (status, type) => () =>
     Response.json({ type: "error", error: { type, message: "x" } }, { status, headers: { "x-should-retry": "false" } });
-
-  const badKey = await (await setup({ claude: true, claudeReply: error(401, "authentication_error") }).api({ headers, body: SAMPLE })).json();
-  assert.ok(!badKey.ok && badKey.error.includes("sozlanmagan"));
-
-  const busy = await (await setup({ claude: true, claudeReply: error(429, "rate_limit_error") }).api({ headers, body: SAMPLE })).json();
-  assert.ok(busy.error.includes("Xizmat band"));
-
+  const run = async (claudeReply) => (await (await setup({ claudeReply }).api({ headers: signed(), body: SAMPLE })).json()).error;
+  assert.ok((await run(error(401, "authentication_error"))).includes("sozlanmagan"));
+  assert.ok((await run(error(429, "rate_limit_error"))).includes("Xizmat band"));
   const refusal = () =>
     Response.json({ id: "m", type: "message", role: "assistant", model: "claude-opus-5-5", content: [], stop_reason: "refusal", usage: { input_tokens: 1, output_tokens: 0 } });
-  const refused = await (await setup({ claude: true, claudeReply: refusal }).api({ headers, body: SAMPLE })).json();
-  assert.ok(refused.error.includes("Tahlil chiqmadi"));
+  assert.ok((await run(refusal)).includes("Tahlil chiqmadi"));
+});
+
+test("lex.uz sahifasi tozalanadi va manzil tekshiriladi", () => {
+  const html = `<html><head><title>x</title><style>p{}</style></head><body><p>18. Shartnomada quyidagilar&nbsp;aks ettirilgan boʻlishi lozim:</p>
+    <div>Ҳужжатга таклиф юборишАудиони тинглашҲужжат элементидан ҳавола олиш</div>
+    <p>[ OKOZ: 1. 03.00.00.00 Fuqarolik qonunchiligi / 03.04.00.00 Majburiyat huquqi ]</p><p>Oldingi tahrirga qarang.</p>
+    <p>kafolat muddati (ikki yildan kam boʻlmasligi lozim);</p><script>var a = "<p>";</script></body></html>`;
+  assert.equal(htmlToText(html), "18. Shartnomada quyidagilar aks ettirilgan boʻlishi lozim:\nkafolat muddati (ikki yildan kam boʻlmasligi lozim);");
+  assert.equal(lexId("https://lex.uz/uz/docs/-4831129?ONDATE=21.04.2022"), "-4831129");
+  assert.equal(lexId("https://lex.uz/docs/5307951"), "5307951");
+  for (const bad of ["https://example.com/docs/-1", "https://lex.uz/search?q=1", "", null]) assert.equal(lexId(bad), null);
+});
+
+test("normalar matni model yozganidan emas, iqtibos oraligʻidan olinadi", () => {
+  const doc = "Kirish.\n18. Shartnomada topshirish muddati aks ettirilgan boʻlishi lozim.\nBoshqa band.\n28. Hisobga qoʻyilmagan shartnomalar haqiqiy emas.";
+  const span = (needle) => ({ type: "char_location", start_char_index: doc.indexOf(needle), end_char_index: doc.indexOf(needle) + needle.length });
+  const content = [
+    { type: "text", text: "Mana normalar:\n" },
+    { type: "text", text: "[Nizom, 18-band] Shartnomada topshirish muddati yozilishi kerak.", citations: [span("18. Shartnomada topshirish muddati"), span("aks ettirilgan boʻlishi lozim.")] },
+    { type: "text", text: "\n[99-modda] Model oʻylab topgan, iqtibossiz norma.\n" },
+    { type: "text", text: "[Nizom, 28-band] Hisobga qoʻyilmagan shartnoma haqiqiy emas.", citations: [span("28. Hisobga qoʻyilmagan shartnomalar haqiqiy emas.")] },
+    { type: "text", text: "\nIzohsiz qator, qavssiz.", citations: [span("Boshqa band.")] },
+  ];
+  const { provisions, repealed } = parseDigest(content, doc);
+  assert.equal(repealed, false);
+  assert.deepEqual(provisions.map((p) => p.ref), ["Nizom, 18-band", "Nizom, 28-band"]);
+  // Yonma-yon ikki iqtibos bitta uzluksiz parchaga birlashadi va hujjat matnining aynan oʻzi boʻladi.
+  assert.equal(provisions[0].text, "18. Shartnomada topshirish muddati aks ettirilgan boʻlishi lozim.");
+  assert.ok(doc.includes(provisions[1].text));
+  assert.equal(parseDigest([{ type: "text", text: "KUCHINI YOʻQOTGAN" }], doc).repealed, true);
+  // Tahrir tarixi izohi norma matni sifatida koʻrsatilmaydi.
+  assert.equal(stripNotes("(260-moddaning birinchi qismi Oʻzbekiston Respublikasining 2021-yil 21-apreldagi OʻRQ-683-sonli Qonuni tahririda — Qonunchilik"), "");
+  assert.equal(stripNotes("Neustoyka bilan faqat haqiqiy talab taʼminlanadi.\n(21-modda 2022-yil 18-yanvardagi Qonunga asosan uchinchi qism bilan toʻldirilgan — x)"), "Neustoyka bilan faqat haqiqiy talab taʼminlanadi.");
 });

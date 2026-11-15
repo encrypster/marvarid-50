@@ -2,9 +2,9 @@
 
 Yangi qurilayotgan uydan xonadon sotib olish shartnomasini imzolashdan oldin
 tekshirib beradigan Telegram Mini App va bot (`@ishonchli_shartnomabot`).
-Xaridor shartnomani yuklaydi, ilova xavfli bandlarni iqtibos va amaldagi qonun
-moddasi bilan koʻrsatadi, quruvchidan nimani soʻrashni aytadi va kutilayotgan
-qonun kuchga kirsa nima oʻzgarishini prognoz qiladi.
+Xaridor shartnomani yuklaydi; Claude xavfli bandlarni shartnomadan iqtibos va
+amaldagi qonun normasi matni bilan koʻrsatadi, quruvchidan nimani soʻrashni
+aytadi va kutilayotgan qonunlar kuchga kirsa nima oʻzgarishini prognoz qiladi.
 
 Manzil: `https://uy-shartnoma-bot.encrypster.workers.dev` (Cloudflare Workers).
 
@@ -12,13 +12,74 @@ Manzil: `https://uy-shartnoma-bot.encrypster.workers.dev` (Cloudflare Workers).
 
 | Qism | Fayl |
 |---|---|
+| Qonunlar kuzatuvi (Claude + lex.uz) | `worker/src/laws.js` |
+| Bot, API, shartnoma tahlili | `worker/src/index.js` |
+| Mini App sahifasi, shriftlar | `worker/src/app.html`, `worker/src/fonts/` |
 | Tekshiruv roʻyxati (12 band) | `data/checklist.json` |
-| Qonunlar bazasi: amaldagi va kutilayotgan | `data/laws.json` |
-| Worker: bot, API, tahlil | `worker/src/index.js` |
-| Mini App sahifasi | `worker/src/app.html` |
-| Namuna natija (ilovadagi "Namuna" tugmasi) | `worker/src/demo.json` |
 | Sinov shartnomalari: nuqsonli va adolatli | `samples/` |
-| Python nusxasi (Render yoki oʻz server uchun) | `shartnoma/` |
+| Brend fayllari | `brand/` |
+| Eski Python nusxasi (qonunlar bazasisiz) | `shartnoma/` |
+
+## Qonunlar bazasi: statik roʻyxat yoʻq
+
+Kodda birorta ham qonun nomi, raqami yoki matni yozilmagan. Baza KV omborida
+turadi va uni har kuni Claude yangilaydi (`worker/src/laws.js`):
+
+1. **Kuzatuv** (`discover`). Claude veb-qidiruv bilan mavzuga tegishli amaldagi
+   hujjatlarni (lex.uz manzili bilan) va hali kuchga kirmagan qonunlarni topadi.
+   Oldingi kungi natija unga faqat qayta tekshirish uchun beriladi.
+2. **Matnlar** (`refresh`). Har bir amaldagi hujjatning toʻliq matni lex.uz dan
+   olinadi; oʻzgargan-oʻzgarmagani matn xeshi bilan aniqlanadi.
+3. **Oʻqish** (`digest`). Matni yangi yoki oʻzgargan hujjatni Claude boshidan
+   oxirigacha oʻqib, shartnomaga taalluqli har bir normani ajratadi.
+
+Jadval: har kuni 01:17 UTC (Toshkentda 06:17) toʻliq sikl; har 3 soatda
+oʻqilmay qolgan hujjatlar tugatiladi. Qoʻlda ishga tushirish:
+`/admin/laws?key=<webhook maxfiy qiymati>&steps=discover,refresh,digest`.
+
+### Claude toʻqimasligi qanday taʼminlanadi
+
+Bu modelning vaʼdasiga emas, tekshiruvga tayanadi:
+
+- **Amaldagi norma matni** Claude yozgan satr emas. Hujjat Claude'ga iqtibos
+  (citations) rejimida beriladi va norma matni sifatida API qaytargan iqtibos
+  oraligʻi — hujjat matnining aynan oʻzi — saqlanadi. Iqtibossiz qator tashlanadi.
+- **Kutilayotgan qonun qoidasi** manba sahifasidan qayta yuklab olinib, iqtibos
+  unda soʻzma-soʻz borligi tekshiriladi; topilmasa qoida tashlanadi.
+- **Tekshiruvda** Claude'ga shu normalar roʻyxati beriladi va u huquqiy asosni
+  faqat ularning `id` si orqali koʻrsata oladi (sxemada boshqa qiymat yoʻq).
+  Ilovada koʻrinadigan norma matni bazadan olinadi. Bazada yoʻq normaga
+  tayangan izoh koʻrsatilmaydi; asos topilmasa, shu ochiq aytiladi.
+- **Shartnomadan iqtibos** shartnoma matnidan qidiriladi; topilmasa
+  ogohlantirish chiqadi.
+
+Chegarasi: qaysi hujjat va qaysi norma "tegishli" ekanini Claude tanlaydi, u
+biror hujjatni oʻtkazib yuborishi mumkin. Sodda izohlar (norma nima deyishi)
+ham Claude'niki va yurist koʻrigidan oʻtmagan. Butun Oʻzbekiston qonunchiligi
+emas, faqat uy-joy shartnomasiga taalluqli hujjatlar kuzatiladi.
+
+## Shartnoma tahlili
+
+1. Fayl matnga aylantiriladi (PDF, DOCX, TXT). Rasm va skaner oʻqilmaydi.
+2. Pasport, JSHSHIR, telefon, karta, hisob raqam va email yashiriladi.
+3. Claude (`claude-opus-5-5`) ga ikki parallel soʻrov ketadi: 12 band boʻyicha
+   tahlil (amaldagi normalar bilan) va kutilayotgan qonunlar boʻyicha prognoz.
+4. Kod biladigan narsalar modelga qoldirilmaydi: til harflarga qarab aniqlanadi,
+   umumiy baho va muhr muammolar sonidan hisoblanadi.
+
+`ANTHROPIC_API_KEY` majburiy; bepul modelga oʻtish yoʻq.
+
+## Xarajat (taxminiy, Claude Opus 5.5 narxida)
+
+| Ish | Bir marta | Izoh |
+|---|---|---|
+| Kunlik kuzatuv | ~0,85 $ | 2026-11-15 da oʻlchangan: 182 ming kirish tokeni |
+| Hujjatni oʻqish | 0,1–2,6 $ | faqat matn oʻzgarganda; Fuqarolik kodeksi eng qimmati |
+| Bitta shartnoma tekshiruvi | ~0,5 $ (hisob-kitob) | 294 norma matni ≈ 100 ming kirish tokeni; 65–70 soniya |
+
+Kunlik kuzatuv oyiga taxminan 25 $ boʻladi. Arzonlashtirish yoʻllari:
+kuzatuvni haftada bir marta qilish (`wrangler.jsonc` dagi cron) yoki
+`laws.js` dagi `MODEL` ni arzonroq modelga almashtirish.
 
 ## Brend
 
@@ -43,89 +104,26 @@ BOʻLING", "KAMCHILIK BOR" yoki "MUAMMO TOPILMADI". Aylana boʻylab har doim
 
 Bot profili (nomi, tavsifi, rasmi) Bot API orqali oʻrnatilgan.
 
-## Tahlil qanday ishlaydi
-
-1. Fayl matnga aylantiriladi (PDF, DOCX, TXT; Cloudflare `toMarkdown`).
-2. Pasport, JSHSHIR, telefon, karta, hisob raqam va email yashiriladi.
-3. Ikki soʻrov parallel ketadi: tekshiruv roʻyxati boʻyicha tahlil va
-   kutilayotgan qonun boʻyicha prognoz.
-4. Model keltirgan har bir iqtibos shartnoma matnidan qidiriladi; topilmasa
-   ogohlantirish chiqadi.
-5. Kod biladigan narsalar modelga qoldirilmaydi: shartnoma tili harflarga qarab
-   aniqlanadi; "bunday shart yoʻq" javobi shart yoʻqligi yaxshi boʻlgan
-   bandlarda (masalan, pul ushlab qolish) muammo sanalmaydi; prognozdagi
-   "imkoniyat/xavf" belgisi bazadan olinadi.
-6. Huquqiy asos modeldan emas, `data/laws.json` dan olinadi.
-
-### Qaysi model
-
-- `ANTHROPIC_API_KEY` maxfiy qiymati boʻlsa — Claude (`claude-opus-5-5`,
-  `CLAUDE_MODEL` oʻzgaruvchisi bilan almashtirsa boʻladi).
-- Boʻlmasa — Cloudflare Workers AI: tahlil Llama 3.3 70B da, prognoz
-  GLM 4.7 Flash da. Bepul tarifda kuniga 10 000 "neuron", bu taxminan 25 ta
-  tekshiruv.
-
-Bepul modellar ikki namuna shartnomada oʻlchangan (2026-11-15):
-
-| Model | Nuqsonli namuna (11 muammo) | Adolatli namuna (0 muammo) |
-|---|---|---|
-| Llama 3.3 70B | 11/11, 11/11 | 1 ta soxta ogohlantirish |
-| GPT-OSS 120B | 8/11, 11/11 | 1 ta soxta ogohlantirish |
-| GLM 4.7 Flash | 10/11, 6/11 | 3 ta soxta ogohlantirish |
-| Nemotron 3 120B | 6/11, 7/11 | oʻlchanmagan |
-
-Koddagi tuzatishlar bilan Llama jonli sinovda nuqsonli namunada 11/11,
-adolatli namunada 0 ta soxta ogohlantirish berdi. Claude (Opus 5.5) jonli
-sinovda nuqsonli namunada 11/11, adolatli namunada 0 ta soxta ogohlantirish
-berdi, 26–36 soniyada; prognoz matnlari shartnomaning aniq bandlariga tayanadi.
-
-## Qonunlar bazasi
-
-`data/laws.json` dagi amaldagi moddalar (PQ-4732 va uning Nizomi, Isteʼmolchilar
-huquqlarini himoya qilish toʻgʻrisidagi Qonun, Fuqarolik kodeksi) lex.uz dan
-soʻzma-soʻz olingan. Qaysi modda qaysi bandga tegishli ekanini va sodda izohlarni
-yurist koʻrib chiqmagan.
-
-Kutilayotgan qonun (Uy-joylarni ulushli qurish toʻgʻrisida) 2026-yil
-10-noyabrda Qonunchilik palatasida qabul qilingan; Senat va Prezident
-bosqichida. Rasmiy matni eʼlon qilinmagani uchun qoidalar OAV xabari asosida
-berilgan. Qonun imzolangach `laws.json` ni rasmiy matn bilan yangilash kerak.
-
 ## Joylash va sinash
 
 ```bash
 cd worker
 npm install
-npm test                                   # 19 ta test, tarmoqsiz
+npm test                                   # 17 ta test, tarmoqsiz
 CLOUDFLARE_API_TOKEN=... npx wrangler deploy
 ```
 
 Maxfiy qiymatlar (Cloudflare: Worker → Settings → Variables and Secrets):
-
-- `TELEGRAM_BOT_TOKEN` — majburiy. Almashtirilsa, `/setup` manzilini bir marta
-  oching: webhook va botdagi "Tekshirish" menyu tugmasi qayta oʻrnatiladi.
-- `ANTHROPIC_API_KEY` — ixtiyoriy, platform.claude.com dan.
-
-Sahifa Worker toʻplamining ichida beriladi (statik fayl sifatida emas).
+`TELEGRAM_BOT_TOKEN` va `ANTHROPIC_API_KEY`. Token almashsa, `/setup`
+manzilini bir marta oching.
 
 ## Cheklovlar
 
 - Rasm va skanerlangan PDF oʻqilmaydi.
-- Bepul tarifda har soʻrovga 10 ms protsessor vaqti; juda uzun shartnomada
-  yetmasligi mumkin. Tahlil 40–55 soniya oladi.
-- Fayllar tashqi AI xizmatiga yuboriladi; shaxsga doir maʼlumotlar
+- Bepul Cloudflare tarifida protsessor vaqti cheklangan; hozircha katta
+  hujjatlar ham oʻtmoqda, lekin kafolat yoʻq.
+- Matnlar Anthropic API ga yuboriladi; shaxsga doir maʼlumotlar
   qonunchiligiga mosligini yurist tasdiqlashi kerak.
 - Yuridik maslahat xizmatlari reyestri (VMQ 675-son) bunday ilovaga
   taalluqlimi, aniqlanmagan.
 - Toʻlov ulanmagan; faqat kunlik limit bor (`DAILY_LIMIT`, hozir 5).
-
-## Python nusxasi
-
-`shartnoma/` papkasida botning Claude bilan ishlaydigan Python nusxasi bor
-(polling yoki webhook, `Dockerfile`, `render.yaml`). U Mini App va prognozni
-oʻz ichiga olmaydi.
-
-```bash
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m pytest -q
-```

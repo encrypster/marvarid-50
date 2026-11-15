@@ -7,16 +7,17 @@
     { "type": "Data", "globs": ["**/*.woff2"], "fallthrough": false }
   ],
   "compatibility_date": "2026-11-01",
+  // 01:17 UTC (Toshkentda 06:17) — kunlik toʻliq kuzatuv; har 3 soatda — navbatdagi hujjatlarni oʻqib tugatish.
+  "triggers": { "crons": ["17 1 * * *", "47 */3 * * *"] },
   "ai": { "binding": "AI" },
   "kv_namespaces": [
     { "binding": "KV", "id": "7ab5ddb43deb434895ce96a144e795e1" }
   ],
   "vars": {
-    "DAILY_LIMIT": "5",
-    "MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    "DAILY_LIMIT": "5"
   },
   "observability": { "enabled": true }
   // Maxfiy qiymatlar (Cloudflare sahifasida Settings -> Variables and Secrets):
   //   TELEGRAM_BOT_TOKEN — majburiy
-  //   ANTHROPIC_API_KEY  — boʻlsa tahlil Claude'da ishlaydi, boʻlmasa bepul Workers AI modelida
+  //   ANTHROPIC_API_KEY  — majburiy: tahlil va qonunlar kuzatuvi Claude'da ishlaydi
 }

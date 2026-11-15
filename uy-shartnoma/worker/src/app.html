@@ -450,6 +450,8 @@ details.more > summary .chev { color: var(--stamp); }
       else run({ body: state.text, headers: { "content-type": "text/plain; charset=utf-8" } });
     });
 
+    const lawCount = h("b", {}, "…");
+    loadLaws().then((laws) => { lawCount.textContent = laws.current.reduce((n, doc) => n + doc.provisions.length, 0); }).catch(() => { lawCount.textContent = "—"; });
     const watermark = seal({ ring: RING, inked: false });
     watermark.classList.add("watermark");
     mount(views.check, h("div", { class: "col gap-24" },
@@ -458,7 +460,7 @@ details.more > summary .chev { color: var(--stamp); }
         h("p", { class: "lead" }, "Quruvchi bergan uy-joy shartnomasini yuklang. Xavfli bandlarni topamiz va quruvchidan nimani soʻrashni aytamiz."),
         h("ul", { class: "facts" },
           h("li", {}, h("b", {}, "12"), "band tekshiriladi"),
-          h("li", {}, h("b", {}, "21"), "qonun moddasi"),
+          h("li", {}, lawCount, "amaldagi norma"),
           h("li", {}, h("b", {}, "~30"), "soniya"))),
       error ? h("div", { class: "msg error", role: "alert" }, icon("alert"), h("span", {}, error)) : null,
       h("div", { class: "sheet" },
@@ -524,8 +526,18 @@ details.more > summary .chev { color: var(--stamp); }
   // ---------- Tekshiruv: xulosa varagʻi ----------
   const excerpt = (label, text) => h("div", { class: "excerpt" }, caps(label), h("p", {}, text));
   const lawBlock = (law) => h("div", { class: "law" },
-    caps(law.ref), h("div", { class: "plain" }, law.plain), excerpt("Hujjat matni", law.text),
+    caps(`${law.doc} · ${law.ref}`), excerpt("Hujjat matni", law.text),
     law.url ? extLink(law.url, "lex.uz da ochish") : null);
+  /** Huquqiy asos: Claude izohi va bazadan olingan norma matni. Asos boʻlmasa, shu ochiq aytiladi. */
+  function legalBasis(item, required) {
+    if (!item.laws.length) {
+      return required ? [h("p", { class: "fact" }, "Bazadagi amaldagi normalardan bu band uchun bevosita asos topilmadi.")] : [];
+    }
+    return [
+      item.lawNote ? h("div", { class: "field" }, caps("Qonun boʻyicha"), h("p", {}, item.lawNote)) : null,
+      h("details", { class: "more" }, h("summary", {}, `Huquqiy asos · ${item.laws.length} ta norma`, chevron()), item.laws.map(lawBlock)),
+    ];
+  }
 
   function findingRow(f, open) {
     const tone = f.group === "bad" ? (f.severity === "yuqori" ? "t-red" : "t-amber") : f.group === "unclear" ? "t-amber" : "t-green";
@@ -542,9 +554,7 @@ details.more > summary .chev { color: var(--stamp); }
         h("p", {}, f.ask)));
       if (f.stat) body.push(h("p", { class: "fact" }, f.stat));
     }
-    if (f.laws.length) {
-      body.push(h("details", { class: "more" }, h("summary", {}, `Huquqiy asos · ${f.laws.length} ta modda`, chevron()), f.laws.map(lawBlock)));
-    }
+    body.push(legalBasis(f, f.group === "bad"));
     return h("details", { class: `row ${tone}`, open },
       h("summary", {}, h("span", { class: "tag" }, label), h("span", { class: "name" }, f.title), chevron()),
       h("div", { class: "content" }, body));
@@ -583,16 +593,16 @@ details.more > summary .chev { color: var(--stamp); }
           h("summary", {}, h("span", { class: "tag" }, "Roʻyxatdan tashqari"), h("span", { class: "name" }, "Qoʻshimcha xavfli band"), chevron()),
           h("div", { class: "content" }, excerpt("Shartnomadan", risk.quote),
             risk.unverified ? h("div", { class: "msg error" }, icon("alert"), h("span", {}, "Bu iqtibos matndan topilmadi — oʻzingiz tekshiring.")) : null,
-            h("div", { class: "field" }, caps("Xulosa"), h("p", {}, risk.explanation)))))),
+            h("div", { class: "field" }, caps("Xulosa"), h("p", {}, risk.explanation)), legalBasis(risk, true))))),
       rest: h("div", {}, rest.length ? rest.map((f) => findingRow(f, false)) : h("div", { class: "empty" }, "Bu boʻlimda band yoʻq.")),
       forecast: h("div", {},
         report.forecast.length ? [
-          h("div", { style: "padding:14px 16px;border-bottom:1px solid var(--rule)" }, caps("Hali kuchga kirmagan"),
-            h("p", { class: "small", style: "margin-top:4px" }, h("b", {}, report.upcoming.title), ". ", report.upcoming.status)),
+          h("div", { class: "col gap-8", style: "padding:14px 16px;border-bottom:1px solid var(--rule)" }, caps("Hali kuchga kirmagan"),
+            report.upcoming.map((law) => h("p", { class: "small" }, h("b", {}, law.title), ". ", law.status, law.applies_note ? ` ${law.applies_note}` : ""))),
           report.forecast.map((f, n) => h("details", { class: `row ${f.kind === "imkoniyat" ? "t-stamp" : "t-red"}`, open: n === 0 },
             h("summary", {}, h("span", { class: "tag" }, f.kind === "imkoniyat" ? "Imkoniyat" : "Xavf"), h("span", { class: "name" }, f.title), chevron()),
-            h("div", { class: "content" }, h("div", { class: "field" }, caps("Sizning shartnomangiz uchun"), h("p", {}, f.explanation)), excerpt("Qoida", f.rule)))),
-          h("p", { class: "small muted", style: "padding:14px 16px" }, report.upcoming.sourceNote),
+            h("div", { class: "content" }, h("div", { class: "field" }, caps("Sizning shartnomangiz uchun"), h("p", {}, f.explanation)),
+              excerpt("Qoida — manbadan", f.rule), h("div", { class: "law" }, caps(f.law), f.source ? extLink(f.source, "Manbani ochish") : null)))),
         ] : h("div", { class: "empty" }, "Bu shartnoma uchun prognoz tuzilmadi.")),
     };
     const showPanel = (id) => { for (const [key, el] of Object.entries(panels)) el.hidden = key !== id; };
@@ -626,6 +636,7 @@ details.more > summary .chev { color: var(--stamp); }
   }
 
   // ---------- Qonunlar ----------
+  const dayOf = (iso) => formatDate(String(iso || "").slice(0, 10));
   async function renderLaws() {
     if (views.laws.dataset.ready) return;
     mount(views.laws, h("div", { class: "empty" }, "Yuklanmoqda…"));
@@ -634,17 +645,22 @@ details.more > summary .chev { color: var(--stamp); }
       const total = laws.current.reduce((n, doc) => n + doc.provisions.length, 0);
       mount(views.laws, h("div", { class: "col gap-24", style: "padding-top:14px" },
         h("div", { class: "pagehead" }, h("h1", {}, "Amaldagi qonunlar"),
-          h("p", {}, "Tekshiruv shu hujjatlarga tayanadi. Matnlar lex.uz dan soʻzma-soʻz olingan."),
-          h("ul", { class: "facts" }, h("li", {}, h("b", {}, laws.current.length), "hujjat"), h("li", {}, h("b", {}, total), "modda"))),
+          h("p", {}, "Roʻyxatni har kuni Claude tuzadi: tegishli hujjatlarni qidiradi, lex.uz dagi toʻliq matnini oʻqiydi va shartnomaga taalluqli normalarni aynan matni bilan ajratadi."),
+          laws.current.length ? h("ul", { class: "facts" }, h("li", {}, h("b", {}, laws.current.length), "hujjat"), h("li", {}, h("b", {}, total), "norma"),
+            h("li", {}, "oxirgi kuzatuv:", h("b", { style: "font-size:13px" }, dayOf(laws.checkedAt)))) : null),
+        laws.current.length ? null : h("div", { class: "msg note" }, icon("info"), h("span", {}, "Baza hozir toʻldirilmoqda. Birozdan soʻng qayta oching.")),
         laws.current.map((doc) => h("div", { class: "col gap-8" },
           h("div", { class: "sec" }, h("h2", {}, doc.title)),
-          h("p", { class: "small muted", style: "padding:0 2px" }, `${doc.doc} · ${doc.edition}`),
+          h("p", { class: "small muted", style: "padding:0 2px" }, doc.doc, doc.why ? ` · ${doc.why}` : ""),
+          doc.stale ? h("div", { class: "msg note" }, icon("info"), h("span", {}, "Bu hujjat matni yaqinda oʻzgargan; normalar qayta oʻqilmoqda.")) : null,
           h("div", { class: "sheet", style: "margin-top:4px" },
             doc.provisions.map((p) => h("details", { class: "row reading t-stamp" },
               h("summary", {}, h("span", { class: "tag" }, p.ref), h("span", { class: "name" }, p.plain), chevron()),
               h("div", { class: "content" }, excerpt("Hujjat matni", p.text))))),
-          h("div", { style: "padding:4px 2px" }, extLink(doc.url, "Toʻliq matn — lex.uz")))),
-        h("div", { class: "msg note" }, icon("info"), h("span", {}, `${laws.note} Yangilangan: ${formatDate(laws.updated)}.`))));
+          h("div", { class: "small muted", style: "padding:4px 2px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap" },
+            extLink(doc.url, "Toʻliq matn — lex.uz"), h("span", {}, `Matn tekshirilgan: ${dayOf(doc.checkedAt)}`)))),
+        laws.pending?.length ? h("div", { class: "msg note" }, icon("info"), h("span", {}, `Oʻqish navbatida: ${laws.pending.join("; ")}.`)) : null,
+        h("div", { class: "msg note" }, icon("info"), h("span", {}, "Norma matnlari lex.uz dagi rasmiy matndan aynan olingan. Sodda izohlarni Claude yozgan; ular yurist koʻrigidan oʻtmagan."))));
       views.laws.dataset.ready = "1";
     } catch {
       mount(views.laws, h("div", { class: "msg error" }, icon("alert"), h("span", {}, "Qonunlarni yuklab boʻlmadi. Qayta urinib koʻring.")));
@@ -658,24 +674,26 @@ details.more > summary .chev { color: var(--stamp); }
     try {
       const laws = await loadLaws();
       const nodes = [h("div", { class: "pagehead" }, h("h1", {}, "Kutilayotgan qonunlar"),
-        h("p", {}, "Hali kuchga kirmagan, lekin uy xaridorlariga taʼsir qiladigan oʻzgarishlar."))];
+        h("p", {}, "Qabul qilingan, lekin hali kuchga kirmagan qonunlar va loyihalar. Roʻyxatni har kuni Claude yangilaydi."))];
       for (const law of laws.upcoming) {
         const next = law.stages.findIndex((stage) => !stage.done);
         const groups = { imkoniyat: law.provisions.filter((p) => p.kind === "imkoniyat"), xavf: law.provisions.filter((p) => p.kind === "xavf") };
         const provisionRow = (p) => h("details", { class: "row reading" },
           h("summary", {}, h("span", { class: "name", style: "font-weight:700;font-size:15.5px" }, p.title), chevron()),
-          h("div", { class: "content" }, h("p", { style: "font-size:15px" }, p.text), p.source ? extLink(p.source, "Manba") : null));
+          h("div", { class: "content" }, excerpt("Manbadan", p.text), p.source ? h("div", { class: "law" }, extLink(p.source, "Manbani ochish")) : null));
         nodes.push(
           h("div", { class: "sheet pad col gap-16" },
-            h("div", { class: "col gap-8" }, caps("Qonun loyihasi"),
-              h("h2", { style: "font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-.025em" }, law.title)),
+            h("div", { class: "col gap-8" }, caps("Hali kuchga kirmagan"),
+              h("h2", { style: "font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-.025em" }, law.title),
+              h("p", { class: "small muted" }, law.status, law.applies_note ? ` ${law.applies_note}` : "")),
             h("ol", { class: "timeline" }, law.stages.map((stage, n) => h("li", { class: stage.done ? "done" : n === next ? "next" : "" },
               h("span", { class: "dot" }, stage.done ? icon("check") : null),
               h("div", {}, h("b", {}, stage.name), caps(stage.done ? (formatDate(stage.date) || "Bajarildi") : n === next ? "Kutilmoqda" : "Navbatda")))))),
-          h("div", { class: "col gap-12" }, h("div", { class: "sec" }, h("h2", {}, "Xaridor uchun imkoniyatlar"), caps(`${groups.imkoniyat.length} ta`)), h("div", { class: "sheet" }, groups.imkoniyat.map(provisionRow))),
-          h("div", { class: "col gap-12" }, h("div", { class: "sec" }, h("h2", {}, "Eʼtibor berish kerak"), caps(`${groups.xavf.length} ta`)), h("div", { class: "sheet" }, groups.xavf.map(provisionRow))),
-          h("div", { class: "msg note" }, icon("info"), h("span", {}, law.source_note, " ", extLink(law.source, "Gazeta.uz"))));
+          groups.imkoniyat.length ? h("div", { class: "col gap-12" }, h("div", { class: "sec" }, h("h2", {}, "Xaridor uchun imkoniyatlar"), caps(`${groups.imkoniyat.length} ta`)), h("div", { class: "sheet" }, groups.imkoniyat.map(provisionRow))) : null,
+          groups.xavf.length ? h("div", { class: "col gap-12" }, h("div", { class: "sec" }, h("h2", {}, "Eʼtibor berish kerak"), caps(`${groups.xavf.length} ta`)), h("div", { class: "sheet" }, groups.xavf.map(provisionRow))) : null);
       }
+      if (!laws.upcoming.length) nodes.push(h("div", { class: "msg note" }, icon("info"), h("span", {}, "Hozircha kuzatuvda kutilayotgan qonun yoʻq.")));
+      nodes.push(h("div", { class: "msg note" }, icon("info"), h("span", {}, `Holat har kuni yangiliklar va rasmiy manbalardan tekshiriladi; har bir qoida manbadagi aynan matni bilan berilgan. Oxirgi kuzatuv: ${dayOf(laws.checkedAt)}.`)));
       mount(views.upcoming, h("div", { class: "col gap-24", style: "padding-top:14px" }, nodes));
       views.upcoming.dataset.ready = "1";
     } catch {
