@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Testlar">
+<meta name="app-version" content="__APP_VERSION__">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -139,6 +140,8 @@ input[type=search]:focus{border-color:var(--acc)}
 .seg{display:flex;background:var(--bg);border-radius:10px;padding:3px}
 .seg button{padding:6px 12px;border-radius:8px;font-size:14px}
 .seg button.on{background:var(--card);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+#upd{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--acc);color:var(--acc-ink);padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;gap:12px;align-items:center;justify-content:center;font-size:14.5px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+#upd button{background:var(--acc-ink);color:var(--acc);border-radius:9px;padding:6px 12px;font-weight:700;font-size:14px}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;z-index:9;max-width:90vw;text-align:center}
 </style>
 </head>
@@ -413,6 +416,7 @@ function isRight(q,sel){return sel.length===q.n&&sel.every(i=>q.opts[i].c)}
 /* ---------- views ---------- */
 function home(){
   stopTimer();S=null;
+  if(typeof NEWV!=='undefined'&&NEWV)setTimeout(updateReady,300);
   const pl=pool(),c={n:0,e:0,l:0,s:0};pl.forEach(q=>c[status(q.id)]++);
   const now=Date.now(),due=pl.filter(q=>P[q.id]&&P[q.id].due<=now).length;
   const pct=pl.length?Math.round(c.s/pl.length*100):0;
@@ -869,6 +873,37 @@ document.getElementById('file').addEventListener('change',async e=>{
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;if(!S)home()});
 window.addEventListener('appinstalled',()=>{deferredInstall=null;if(!S)home()});
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
+/* ---------- avtomatik yangilanish ---------- */
+// Sahifaga joylashtirish paytida versiya yoziladi; serverdagi version.json undan farq qilsa — yangi versiya chiqqan.
+const APPV=(document.querySelector('meta[name=app-version]')||{}).content||'';
+let NEWV='',lastCheck=0;
+function applyUpdate(){
+  try{sessionStorage.setItem('ik_upd',NEWV)}catch(e){}
+  const go=()=>location.reload();
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{}).then(go);else go();
+}
+function updateBar(){
+  if(document.getElementById('upd'))return;
+  const d=document.createElement('div');d.id='upd';
+  d.innerHTML='<span>🔄 Ilovaning yangi versiyasi chiqdi</span><button>Yangilash</button>';
+  d.querySelector('button').onclick=applyUpdate;document.body.appendChild(d);
+}
+function updateReady(){                              // mashq o‘rtasida bo‘lmasa o‘zi yangilanadi, aks holda yozuv chiqadi
+  if(!NEWV)return;
+  let tried='';try{tried=sessionStorage.getItem('ik_upd')||''}catch(e){}
+  if(!S&&!AIRUN&&tried!==NEWV&&!document.querySelector('.spin')){toast('Yangi versiya o‘rnatilmoqda…');setTimeout(applyUpdate,900)}
+  else updateBar();
+}
+async function checkUpdate(){
+  if(!APPV||APPV[0]==='_'||NEWV||Date.now()-lastCheck<60000)return;
+  lastCheck=Date.now();
+  try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;
+    const v=(await r.json()).v;if(v&&v!==APPV){NEWV=v;updateReady()}}catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
+window.addEventListener('online',checkUpdate);
+setInterval(checkUpdate,15*60000);setTimeout(checkUpdate,4000);
 boot();
 </script>
 </body>

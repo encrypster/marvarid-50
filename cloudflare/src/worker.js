@@ -206,7 +206,7 @@ function asset(request, path) {
   if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405 });
   const f = ASSETS[path === "/" ? "/index.html" : path];
   if (!f) return new Response("Not found", { status: 404, headers: { "content-type": "text/plain" } });
-  const headers = { "content-type": f.type, etag: f.etag, "cache-control": "no-cache", "x-content-type-options": "nosniff" };
+  const headers = { "content-type": f.type, etag: f.etag, "cache-control": path === "/version.json" ? "no-store" : "no-cache", "x-content-type-options": "nosniff" };
   if (request.headers.get("if-none-match") === f.etag) return new Response(null, { status: 304, headers });
   const bytes = Uint8Array.from(atob(f.b64), (c) => c.charCodeAt(0));
   return new Response(request.method === "HEAD" ? null : bytes, { headers });
