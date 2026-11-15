@@ -110,6 +110,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .item .w{color:var(--bad);font-size:14px;margin-top:4px;text-decoration:line-through}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:var(--line);vertical-align:1px}
 .dot.l{background:var(--warn)}.dot.s{background:var(--ok)}.dot.e{background:var(--bad)}
+input[type=date]{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 input[type=search]{width:100%;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none}
 input[type=search]:focus{border-color:var(--acc)}
 .set{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -132,12 +133,12 @@ const LS={
   del(k){try{localStorage.removeItem(k)}catch(e){}}
 };
 const DAY=864e5;
-const IV=[0,10*6e4,DAY,3*DAY,7*DAY,14*DAY];      // Leitner qutilari oralig‘i
+const IV=[0,5*6e4,30*6e4,4*36e5,DAY,2*DAY];      // qisqa muddatli tayyorgarlik: 5 daq, 30 daq, 4 soat, 1 kun, 2 kun
 const BLOCK=50;
 let ALL=[],BYID={},SRC='';
 let P=LS.get('ik_p',{});                          // id -> {b,due,ok,bad,last}
 let CFG=Object.assign({size:20,think:false,block:0},LS.get('ik_cfg',{}));
-let DAYS=LS.get('ik_days',{});
+let DAYS=LS.get('ik_days',{}),NEWD=LS.get('ik_new',{});
 let S=null;                                       // joriy sessiya
 let timer=null,deferredInstall=null;
 const app=document.getElementById('app');
@@ -199,10 +200,34 @@ function pool(){return CFG.block?ALL.slice((CFG.block-1)*BLOCK,CFG.block*BLOCK):
 function status(id){const p=P[id];return !p?'n':p.b<=1?'e':p.b===2?'l':'s'}
 function saveCfg(){LS.set('ik_cfg',CFG)}
 function grade(id,ok){
-  const now=Date.now(),p=P[id]||{b:0,ok:0,bad:0};
+  const now=Date.now(),p=P[id]||{b:0,ok:0,bad:0},k=dayKey();
+  if(!P[id]){NEWD[k]=(NEWD[k]||0)+1;LS.set('ik_new',NEWD)}
   if(ok){p.b=p.b===0?2:Math.min(p.b+1,5);p.ok++}else{p.b=1;p.bad++}
   p.due=now+IV[p.b];p.last=now;P[id]=p;LS.set('ik_p',P);
-  const k=dayKey();DAYS[k]=(DAYS[k]||0)+1;LS.set('ik_days',DAYS);
+  DAYS[k]=(DAYS[k]||0)+1;LS.set('ik_days',DAYS);
+}
+function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return dayKey(d)}
+function plan(){
+  if(!CFG.exam)return null;
+  const d=Math.round((new Date(CFG.exam+'T00:00')-new Date(dayKey()+'T00:00'))/DAY);
+  if(d<0)return null;
+  const now=Date.now(),fresh=ALL.filter(q=>!P[q.id]).length,nt=NEWD[dayKey()]||0;
+  const target=Math.ceil((fresh+nt)/Math.max(1,d-1));          // oxirgi kun faqat takrorlash uchun
+  return {d,fresh,nt,target,newLeft:Math.max(0,Math.min(fresh,target-nt)),due:ALL.filter(q=>P[q.id]&&P[q.id].due<=now).length};
+}
+function planHtml(){
+  const pl=plan();
+  if(!pl)return `<div class="card" style="margin-top:12px"><b>Test qachon?</b><p class="mute small" style="margin:4px 0 10px">Kunni belgilang — ilova savollarni kunlarga bo‘lib beradi.</p>
+    <div class="chips">${[[0,'Bugun'],[1,'Ertaga'],[2,'2 kundan keyin'],[3,'3 kundan keyin']].map(([n,t])=>`<button class="chip" data-act="examday" data-v="${n}">${t}</button>`).join('')}</div></div>`;
+  const when=pl.d===0?'Test bugun':pl.d===1?'Test ertaga':'Testgacha '+pl.d+' kun';
+  let msg;
+  if(pl.newLeft)msg='Bugun yana <b>'+pl.newLeft+'</b> ta yangi savol'+(pl.due?' va <b>'+pl.due+'</b> ta takrorlash':'');
+  else if(pl.due)msg='Yangi savollar rejasi bajarildi. Yana <b>'+pl.due+'</b> ta takrorlash bor';
+  else if(pl.fresh)msg='Bugungi reja bajarildi ✅ Xohlasangiz davom eting';
+  else msg='Hamma savol ko‘rib chiqildi ✅ Endi takrorlash va «Imtihon» rejimi';
+  const pct=pl.target?Math.min(100,pl.nt/pl.target*100):100;
+  return `<div class="card" style="margin-top:12px"><div class="row"><b class="grow">📅 ${when}</b><button class="mute small" data-act="settings">o‘zgartirish</button></div>
+    <p style="margin:6px 0 10px">${msg}</p><div class="bar"><i style="width:${pct}%"></i></div></div>`;
 }
 function streak(){let n=0;const d=new Date();if(!DAYS[dayKey(d)])d.setDate(d.getDate()-1);
   while(DAYS[dayKey(d)]){n++;d.setDate(d.getDate()-1)}return n}
@@ -225,7 +250,7 @@ function pickLearn(n){
 function start(mode,ids,extra){
   stopTimer();
   if(!ids.length){toast('Bu rejim uchun savol yo‘q');return}
-  S=Object.assign({mode,queue:ids.slice(),pos:0,total:ids.length,done:0,first:{},missed:[],answers:{},cur:null},extra||{});
+  S=Object.assign({mode,queue:ids.slice(),pos:0,total:ids.length,done:0,first:{},conf:{},missed:[],answers:{},cur:null},extra||{});
   if(mode==='exam'){
     S.left=ids.length*60;
     timer=setInterval(()=>{S.left--;const t=document.getElementById('timer');if(t)t.textContent=fmt(Math.max(S.left,0));if(S.left<=0)finish()},1000);
@@ -264,10 +289,11 @@ function home(){
       <div class="stat"><b>${due}</b><span>Takrorlash vaqti</span></div>
     </div>
   </div>
+  ${planHtml()}
   <h3>Bo‘lim</h3><div class="chips">${chips}</div>
   <h3>Mashq</h3>
   <div class="modes">
-    <button class="mode main" data-act="learn"><span class="ic">🧠</span><span><b>Aqlli o‘rganish</b><span>${CFG.size} ta savol · xato qilinganlari to‘g‘ri topilguncha qaytadi</span></span></button>
+    <button class="mode main" data-act="learn"><span class="ic">🧠</span><span><b>Aqlli o‘rganish</b><span>${CFG.size} ta savol · xato qilingani ikki marta to‘g‘ri topilguncha qaytadi</span></span></button>
     <button class="mode" data-act="errors"><span class="ic">🎯</span><span><b>Xatolar ustida ishlash</b><span>Oxirgi marta xato javob berilgan savollar</span></span>${c.e?'<span class="badge">'+c.e+'</span>':''}</button>
     <button class="mode" data-act="cards"><span class="ic">🃏</span><span><b>Kartochkalar</b><span>Variantlarsiz: javobni o‘zingiz eslang</span></span></button>
     <button class="mode" data-act="examsetup"><span class="ic">⏱</span><span><b>Imtihon</b><span>Vaqt bilan, natija oxirida</span></span></button>
@@ -324,8 +350,8 @@ function renderQ(){
 function answer(){
   const c=S.cur,q=c.q;c.answered=true;c.right=isRight(q,c.sel);
   if(S.first[q.id]===undefined){S.first[q.id]=c.right;grade(q.id,c.right);if(!c.right)S.missed.push({id:q.id,sel:c.sel.slice()})}
-  if(c.right)S.done++;
-  else{S.queue.splice(Math.min(S.queue.length,S.pos+4),0,q.id);if(navigator.vibrate)navigator.vibrate(60)}
+  if(c.right){if(S.first[q.id]===false&&!S.conf[q.id]&&S.mode!=='exam'){S.conf[q.id]=1;S.queue.push(q.id)}else S.done++}
+  else{S.conf[q.id]=0;S.queue.splice(Math.min(S.queue.length,S.pos+3),0,q.id);if(navigator.vibrate)navigator.vibrate(60)}
   renderQ();
 }
 function finish(){
@@ -386,6 +412,9 @@ function settings(){
     <div class="set"><div><b>Avval o‘ylab ko‘rish</b><p class="mute small">Variantlar yashirin turadi — javobni o‘zingiz eslaysiz</p></div>
       <div class="seg"><button class="${CFG.think?'':'on'}" data-act="think" data-v="0">Yo‘q</button><button class="${CFG.think?'on':''}" data-act="think" data-v="1">Ha</button></div></div>
   </div>
+  <h3>Test kuni</h3>
+  <div class="card"><div class="set"><div><b>Sana</b><p class="mute small">Kunlik reja shu sanaga qarab hisoblanadi</p></div>
+    <input type="date" id="exam" value="${esc(CFG.exam||'')}" min="${dayKey()}"></div></div>
   <h3>Savollar fayli</h3>
   <div class="card"><p><b>${esc(SRC)}</b></p><p class="mute small" style="margin:4px 0 12px">${ALL.length} ta noyob savol. Format: <code>#</code> savol, <code>+</code> to‘g‘ri javob, <code>-</code> noto‘g‘ri javob.</p>
     <div class="row"><button class="btn sm" data-act="upload">Boshqa fayl yuklash</button>${custom?'<button class="btn sm ghost" data-act="restore">Asosiy to‘plamga qaytish</button>':''}</div></div>
@@ -419,14 +448,16 @@ const ACT={
     if(!ok)S.queue.splice(Math.min(S.queue.length,S.pos+4),0,id),S.total=S.queue.length;
     S.pos++;nextQ()},
   bf(v){BF.f=v;browse()},
+  examday(v){CFG.exam=addDays(+v);saveCfg();home()},
   size(v){CFG.size=+v;saveCfg();settings()},
   think(v){CFG.think=v==='1';saveCfg();settings()},
   upload(){document.getElementById('file').click()},
   restore(){LS.del('ik_custom');location.reload()},
-  reset(){if(confirm('Barcha natijalar o‘chirilsinmi?')){P={};DAYS={};LS.set('ik_p',P);LS.set('ik_days',DAYS);toast('Natijalar o‘chirildi');home()}},
+  reset(){if(confirm('Barcha natijalar o‘chirilsinmi?')){P={};DAYS={};NEWD={};LS.set('ik_p',P);LS.set('ik_days',DAYS);LS.set('ik_new',NEWD);toast('Natijalar o‘chirildi');home()}},
   async install(){if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;home()}
 };
 app.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v!==undefined?b.dataset.v:b.dataset.i)});
+app.addEventListener('change',e=>{if(e.target.id==='exam'){CFG.exam=e.target.value||'';saveCfg();toast('Test kuni saqlandi')}});
 document.addEventListener('keydown',e=>{
   if(!S||!S.cur||e.target.tagName==='INPUT')return;
   if(e.key==='Enter'){const b=app.querySelector('.foot .btn:last-child:not([disabled])');if(b)b.click()}
