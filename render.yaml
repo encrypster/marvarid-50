@@ -1,0 +1,16 @@
+# Render.com uchun: New -> Blueprint -> shu repozitoriy.
+# Ikki maxfiy qiymat Render sahifasida kiritiladi, bu faylga yozilmaydi.
+services:
+  - type: web
+    name: uy-shartnoma-bot
+    runtime: docker
+    plan: free
+    rootDir: uy-shartnoma
+    healthCheckPath: /
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DAILY_LIMIT
+        value: "3"

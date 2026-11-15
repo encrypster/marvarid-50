@@ -182,3 +182,36 @@ def test_split_messages_respects_limit():
     messages = split_messages(parts, limit=50)
     assert all(len(m) <= 50 for m in messages)
     assert "".join(messages).count("c") == 100
+
+
+def test_webhook_app_health_and_secret_check():
+    import asyncio
+
+    from aiogram import Bot
+    from aiohttp.test_utils import TestClient, TestServer
+
+    from shartnoma.bot import WEBHOOK_PATH, create_app, webhook_secret
+
+    token = "123456:TEST-TOKEN"
+    secret = webhook_secret(token)
+
+    async def run():
+        bot = Bot(token)
+        async with TestClient(TestServer(create_app(bot, secret))) as client:
+            health = await client.get("/")
+            health_text = await health.text()
+            wrong = await client.post(
+                WEBHOOK_PATH,
+                json={"update_id": 1},
+                headers={"X-Telegram-Bot-Api-Secret-Token": "notogri"},
+            )
+            right = await client.post(
+                WEBHOOK_PATH,
+                json={"update_id": 1},
+                headers={"X-Telegram-Bot-Api-Secret-Token": secret},
+            )
+        await bot.session.close()
+        return health.status, health_text, wrong.status, right.status
+
+    assert asyncio.run(run()) == (200, "ok", 401, 200)
+    assert token not in secret

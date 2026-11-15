@@ -1,12 +1,17 @@
 """Telegram bot: python -m shartnoma.bot
 
-Muhit oʻzgaruvchilari: TELEGRAM_BOT_TOKEN, ANTHROPIC_API_KEY,
-DAILY_LIMIT (ixtiyoriy, bir foydalanuvchiga kunlik tekshiruvlar soni, standart 3).
+Muhit oʻzgaruvchilari:
+  TELEGRAM_BOT_TOKEN  majburiy
+  ANTHROPIC_API_KEY   tahlil uchun; boʻlmasa bot ishlaydi, lekin tekshirmaydi
+  DAILY_LIMIT         bir foydalanuvchiga kunlik tekshiruvlar soni (standart 3)
+  WEBHOOK_URL         berilsa (yoki Render oʻrnatgan RENDER_EXTERNAL_URL boʻlsa)
+                      bot webhook rejimida PORT da tinglaydi; aks holda polling
 """
 
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import io
 import logging
 import os
@@ -18,6 +23,8 @@ from aiogram.enums import ChatAction, ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandStart
 from aiogram.types import Message
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiohttp import web
 
 from .analyzer import AnalysisError, analyze
 from .checklist import load_checklist
@@ -43,6 +50,8 @@ START_TEXT = (
 )
 # Bundan qisqa matn shartnoma emas, oddiy xabar deb hisoblanadi.
 MIN_PASTED_CHARS = 800
+WEBHOOK_PATH = "/webhook"
+NO_KEY_TEXT = "Tahlil xizmati hali ulanmagan. Birozdan soʻng urinib koʻring."
 
 dp = Dispatcher()
 _items = load_checklist()
@@ -63,6 +72,9 @@ async def _send_report(message: Message, parts: list[str]) -> None:
 async def _check(message: Message, filename: str, data: bytes) -> None:
     user_id = message.from_user.id
     key = (user_id, date.today())
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        await message.answer(NO_KEY_TEXT)
+        return
     if user_id in _busy:
         await message.answer("Oldingi shartnoma hali tekshirilmoqda, biroz kuting.")
         return
@@ -127,13 +139,54 @@ async def on_text(message: Message) -> None:
     await _check(message, "shartnoma.txt", message.text.encode("utf-8"))
 
 
-async def main() -> None:
+def webhook_secret(token: str) -> str:
+    """Telegram soʻrovlarini tanish uchun maxfiy qiymat; tokendan hosil qilinadi."""
+    return hashlib.sha256(f"webhook:{token}".encode()).hexdigest()
+
+
+def create_app(bot: Bot, secret: str) -> web.Application:
+    async def health(_: web.Request) -> web.Response:
+        return web.Response(text="ok")
+
+    app = web.Application()
+    app.router.add_get("/", health)
+    SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=secret).register(
+        app, path=WEBHOOK_PATH
+    )
+    return app
+
+
+def run_webhook(bot: Bot, base_url: str, port: int) -> None:
+    secret = webhook_secret(bot.token)
+
+    async def on_startup() -> None:
+        await bot.set_webhook(base_url.rstrip("/") + WEBHOOK_PATH, secret_token=secret)
+
+    dp.startup.register(on_startup)
+    app = create_app(bot, secret)
+    setup_application(app, dp, bot=bot)
+    web.run_app(app, host="0.0.0.0", port=port)
+
+
+async def run_polling(bot: Bot) -> None:
+    await bot.delete_webhook()
+    await dp.start_polling(bot)
+
+
+def main() -> None:
     logging.basicConfig(level=logging.INFO)
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not token:
         raise SystemExit("TELEGRAM_BOT_TOKEN oʻrnatilmagan")
-    await dp.start_polling(Bot(token))
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        log.warning("ANTHROPIC_API_KEY yoʻq: bot javob beradi, lekin tekshirmaydi")
+    bot = Bot(token)
+    base_url = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL")
+    if base_url:
+        run_webhook(bot, base_url, int(os.environ.get("PORT", "10000")))
+    else:
+        asyncio.run(run_polling(bot))
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
