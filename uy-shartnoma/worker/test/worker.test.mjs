@@ -54,7 +54,8 @@ function setup({ answer = modelAnswer(), aiError = null, fileText = SAMPLE } = {
       run: async (model, input) => {
         calls.ai.push({ model, input });
         if (aiError) throw new Error(aiError);
-        return { response: `<think>oʻylayapman {x}</think>\n${JSON.stringify(answer)}` };
+        // Haqiqiy model javobi OpenAI uslubida keladi.
+        return { choices: [{ message: { content: JSON.stringify(answer) } }] };
       },
       toMarkdown: async (file) => {
         calls.converted.push(file.name);
@@ -197,6 +198,20 @@ test("kunlik limit va bepul kvota tugashi", async () => {
   const quota = setup({ aiError: "3036: You have used up your daily free allocation of 10,000 neurons" });
   await quota.send(message({ text: SAMPLE }));
   assert.ok(quota.sent().at(-1).includes("bepul tahlil limiti tugadi"));
+});
+
+test("soʻrovda sxema bor va oʻylash oʻchirilgan; boʻsh javob xato hisoblanadi", async () => {
+  const { calls, send } = setup();
+  await send(message({ text: SAMPLE }));
+  const input = calls.ai[0].input;
+  assert.equal(input.response_format.type, "json_schema");
+  assert.equal(input.chat_template_kwargs.enable_thinking, false);
+
+  const empty = setup({ answer: { is_housing_contract: true, summary: "", findings: [], other_risks: [] } });
+  await empty.send(message({ text: SAMPLE }));
+  assert.ok(empty.sent().at(-1).includes("Tahlil chiqmadi"));
+  assert.throws(() => parseAnalysis(undefined));
+  assert.equal(parseAnalysis("<think>{x}</think>" + JSON.stringify(modelAnswer())).findings.length, CHECKLIST.length);
 });
 
 test("uy-joy shartnomasi boʻlmagan hujjat", async () => {

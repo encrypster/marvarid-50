@@ -13,16 +13,18 @@ Tekshiruv roʻyxati (`data/checklist.json`, 12 band) Raqobat qoʻmitasining
 alohida hosting ham, Anthropic kaliti ham kerak emas: model Cloudflare Workers AI
 dan olinadi (`@cf/zai-org/glm-4.7-flash`, bepul tarifda kuniga 10 000 "neuron").
 
-1. Cloudflare sahifasida **Workers & Pages → Create → Import a repository**.
-2. `encrypster/marvarid-50` repozitoriysini tanlang va sozlang:
-   - Project name: `uy-shartnoma-bot`
-   - Production branch: `ccr-9c0f1497-mtd7k9`
-   - Root directory: `uy-shartnoma/worker`
-   - Deploy command: `npx wrangler deploy`
-3. Joylangach, Worker sahifasida **Settings → Variables and Secrets → Add**:
-   turi **Secret**, nomi `TELEGRAM_BOT_TOKEN`, qiymati bot tokeni.
-4. Brauzerda `https://uy-shartnoma-bot.<sizning-subdomen>.workers.dev/setup`
-   manzilini bir marta oching. `{"ok":true}` chiqsa, bot ishlayapti.
+Bot joylangan: `https://uy-shartnoma-bot.encrypster.workers.dev`, Telegram
+webhook shu manzilga ulangan. Kod oʻzgargach qayta joylash:
+
+```bash
+cd worker
+npm install
+CLOUDFLARE_API_TOKEN=... npx wrangler deploy
+```
+
+Bot tokeni Worker'da `TELEGRAM_BOT_TOKEN` nomli maxfiy qiymat sifatida saqlanadi
+(`npx wrangler secret put TELEGRAM_BOT_TOKEN`). Token almashsa, yangisini qoʻyib,
+`/setup` manzilini bir marta oching.
 
 KV ombori (`uy-shartnoma-bot`) hisobda yaratilgan va `wrangler.jsonc` ga yozilgan.
 
@@ -30,8 +32,10 @@ Python nusxasidan farqlari:
 
 - Rasm va skanerlangan PDF oʻqilmaydi; faqat matnli PDF, DOCX, TXT va yozib
   yuborilgan matn.
-- Model ochiq va bepul, shuning uchun oʻzbekcha huquqiy matnda Claude'dan
-  kuchsizroq boʻlishi mumkin. Sifatni haqiqiy shartnomalarda tekshirish kerak.
+- Model ochiq va bepul. Namuna shartnomada 26 soniyada 12 banddan 10 tasini
+  toʻgʻri baholadi (kafolat boʻyicha ikki bandni "aniqlanmadi" dedi). Haqiqiy
+  shartnomalarda sifatni tekshirish kerak. Modelning "oʻylash" rejimi ataylab
+  oʻchirilgan: yoqilsa javob 100 soniyaga choʻziladi va JSON buziladi.
   Modelni `wrangler.jsonc` dagi `MODEL` orqali almashtirsa boʻladi.
 - Bepul tarifda har soʻrovga 10 ms protsessor vaqti beriladi; juda uzun
   shartnomada yetmasligi mumkin.

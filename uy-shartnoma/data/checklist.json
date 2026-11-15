@@ -18,7 +18,7 @@
       "id": "kechikish_penyasi",
       "title": "Kechikish uchun quruvchining javobgarligi (penya)",
       "severity": "yuqori",
-      "look_for": "Quruvchi topshirish muddatini buzsa, xaridorga penya yoki jarima toʻlashi yozilganmi va uning miqdori koʻrsatilganmi. Penya umuman yoʻqligi, ramziy miqdor yoki \"quruvchi javobgar emas\" degan bandlar muammo.",
+      "look_for": "Quruvchi topshirish muddatini buzsa, xaridorga penya yoki jarima toʻlashi yozilganmi va uning miqdori koʻrsatilganmi. Penya umuman yoʻqligi, ramziy miqdor yoki \"quruvchi javobgar emas\" degan bandlar muammo. Diqqat: xaridorning toʻlovni kechiktirgani uchun penyasi bu bandga kirmaydi; shartnomada faqat xaridor penyasi boʻlsa, bu band \"yoq\" hisoblanadi.",
       "why": "Penya yozilmagan boʻlsa, quruvchini kechikish uchun javobgarlikka tortish sud orqali va qiyin kechadi.",
       "ask_developer": "Topshirish kechiksa, har bir kun uchun qancha penya toʻlaysiz? Buni shartnomaga kiriting.",
       "stat": "Shartnomalarning 50,8 foizida quruvchi uchun penya belgilanmagan.",

@@ -65,6 +65,46 @@ ${JSON.stringify(
   1,
 )}`;
 
+const RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "tahlil",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["is_housing_contract", "summary", "findings", "other_risks"],
+      properties: {
+        is_housing_contract: { type: "boolean" },
+        summary: { type: "string" },
+        findings: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["check_id", "status", "quote", "explanation"],
+            properties: {
+              check_id: { type: "string" },
+              status: { type: "string", enum: STATUSES },
+              quote: { type: "string" },
+              explanation: { type: "string" },
+            },
+          },
+        },
+        other_risks: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["quote", "explanation"],
+            properties: { quote: { type: "string" }, explanation: { type: "string" } },
+          },
+        },
+      },
+    },
+  },
+};
+
 class UserError extends Error {}
 
 // ---------- Shaxsiy maʼlumotni yashirish ----------
@@ -152,8 +192,11 @@ export async function analyze(env, contractText) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `<shartnoma>\n${text}\n</shartnoma>` },
       ],
-      max_tokens: 6000,
+      max_tokens: 4000,
       temperature: 0.1,
+      // Sxema buzuq JSON'ning oldini oladi; "oʻylash" oʻchirilmasa javob 100 soniyaga choʻziladi.
+      response_format: RESPONSE_FORMAT,
+      chat_template_kwargs: { enable_thinking: false },
     });
   } catch (error) {
     const message = String(error?.message || error);
@@ -165,8 +208,11 @@ export async function analyze(env, contractText) {
   }
 
   // Modelga qarab javob shakli farq qiladi: {response} yoki OpenAI uslubidagi {choices}.
-  const raw = output?.response ?? output?.choices?.[0]?.message?.content ?? output;
+  const raw = output?.response ?? output?.choices?.[0]?.message?.content;
   const analysis = parseAnalysis(raw);
+  if (analysis.isHousingContract && analysis.findings.length === 0) {
+    throw new UserError("Tahlil chiqmadi. Qayta urinib koʻring.");
+  }
 
   const unverified = new Set();
   for (const f of analysis.findings) {
