@@ -218,7 +218,7 @@ function examDate(){return CFG.exams[CFG.deck]||''}
 async function loadDeck(id){
   if(id!=='builtin'){
     const d=DECKS.find(d=>d.id===id),t=d&&LS.get('ik_deck_'+id,null);
-    if(t&&setData(t,d.name)){CFG.deck=id;saveCfg();return true}
+    if(t&&setData(t,d.name,LS.get('ik_ai_'+id,null))){CFG.deck=id;saveCfg();return true}
   }
   if(BUILTIN==null){try{const r=await fetch('questions.txt');if(r.ok)BUILTIN=await r.text()}catch(e){}
     try{const r=await fetch('questions.ai.json');if(r.ok)BUILTIN_AI=await r.json()}catch(e){}}
@@ -355,6 +355,7 @@ function home(){
     </div>
   </div>
   ${planHtml()}
+  ${aiHtml()}
   <h3>Bo‘lim</h3><div class="chips">${chips}</div>
   <h3>Mashq</h3>
   <div class="modes">
@@ -476,12 +477,59 @@ function list(){
       q.opts.filter(o=>o.c).map(o=>'<div class="a">✓ '+esc(o.t)+'</div>').join('')+hook(q)+'</div>').join('');
 }
 
+/* ---------- AI tahlili (faqat yuklangan testlar uchun; server: /api/analyze) ---------- */
+let AIRUN=null;
+function aiMissing(){return ALL.filter(q=>!q.m)}
+function aiHtml(){
+  if(CFG.deck==='builtin')return '';
+  const n=aiMissing().length;
+  if(!n)return '<p class="mute small" style="margin:10px 2px 0">✨ AI tahlili tayyor: langar so‘zlar va ilmoqlar qo‘shilgan.</p>';
+  return `<div class="card" style="margin-top:12px"><b>✨ AI bilan tahlil qilish</b><p class="mute small" style="margin:4px 0 10px">${n} ta savolga sariq langar so‘zlar va eslab qolish ilmog‘i yoziladi. Internet va kirish kodi kerak, bir necha daqiqa oladi.</p>
+    <button class="btn sm" data-act="ai">Tahlilni boshlash</button></div>`;
+}
+function aiView(){
+  const r=AIRUN;
+  show(`<div class="qhead"><h2>✨ AI tahlili</h2></div>
+  <div class="card"><p><b>${r.done} / ${r.total}</b> savol tahlil qilindi</p><div class="bar" style="margin:12px 0"><i style="width:${r.total?r.done/r.total*100:0}%"></i></div>
+    <p class="mute small">${esc(r.msg||'Sahifani yopmang. To‘xtatsangiz, tayyor bo‘lgan qismi saqlanib qoladi.')}</p></div>
+  <div class="foot"><div><button class="btn ghost" data-act="aistop">${r.stopped?'Bosh sahifa':'To‘xtatish'}</button></div></div>`);
+}
+async function aiRun(){
+  let code=LS.get('ik_code','');
+  if(!code){code=(prompt('AI tahlili uchun kirish kodini kiriting:')||'').trim();if(!code)return}
+  const deck=CFG.deck,todo=aiMissing(),ai=LS.get('ik_ai_'+deck,{})||{};
+  const r=AIRUN={done:0,total:todo.length,stopped:false,msg:''};aiView();
+  const ERR={bad_code:'Kirish kodi noto‘g‘ri.',rate_limited:'AI band — birozdan keyin qayta urinib ko‘ring.',not_configured:'AI server sozlanmagan.',
+    ai_auth:'AI kaliti ishlamayapti yoki kredit tugagan.',refused:'AI bu savollarni tahlil qilishdan bosh tortdi.'};
+  for(let i=0;i<todo.length&&!r.stopped;i+=15){
+    const part=todo.slice(i,i+15);let res=null,err='';
+    for(let t=0;t<2&&!res&&!r.stopped;t++){                 // bir marta qayta urinish
+      try{
+        const resp=await fetch('api/analyze',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},
+          body:JSON.stringify({questions:part.map(q=>({id:q.id,q:q.q,ok:q.opts.filter(o=>o.c).map(o=>o.t),bad:q.opts.filter(o=>!o.c).map(o=>o.t)}))})});
+        const data=await resp.json().catch(()=>({}));
+        if(resp.ok&&data.items)res=data.items;
+        else{err=ERR[data.error]||'AI serverda xato ('+resp.status+').';if(resp.status===401){LS.del('ik_code');break}if(resp.status<500&&resp.status!==429)break}
+      }catch(e){err='AI serverga ulanib bo‘lmadi. Internetni tekshiring.'}
+    }
+    if(r.stopped)break;
+    if(!res){r.stopped=true;r.msg=err+' Tayyor bo‘lgan qismi saqlandi.';break}
+    LS.set('ik_code',code);
+    Object.assign(ai,res);
+    if(!LS.set('ik_ai_'+deck,ai)){r.stopped=true;r.msg='Qurilma xotirasi to‘ldi.';break}
+    r.done+=part.length;if(AIRUN===r)aiView();
+  }
+  if(CFG.deck===deck)await loadDeck(deck);
+  if(AIRUN!==r)return;
+  if(r.stopped&&r.msg)return aiView();
+  AIRUN=null;toast(r.stopped?'Tahlil to‘xtatildi':'AI tahlili tayyor ✨');home();
+}
 function decks(){
   stopTimer();S=null;
   const row=(id,name,sub,del)=>`<div class="deck${CFG.deck===id?' on':''}"><button class="mode" data-act="deck" data-v="${id}"><span class="ic">${CFG.deck===id?'✅':'📄'}</span><span><b>${esc(name)}</b><span>${sub}</span></span></button>${del?'<button class="x" data-act="deldeck" data-v="'+id+'" aria-label="O‘chirish">🗑</button>':''}</div>`;
   show(`<div class="qhead"><button class="x" data-act="home">←</button><h2>Testlar</h2></div>
   ${row('builtin','IK-509','Ilovaga biriktirilgan to‘plam',false)}
-  ${DECKS.map(d=>row(d.id,d.name,d.n+' ta savol',true)).join('')}
+  ${DECKS.map(d=>row(d.id,d.name,d.n+' ta savol'+(LS.get('ik_ai_'+d.id,null)?' · ✨ AI':''),true)).join('')}
   <div class="card" style="margin-top:16px"><b>Yangi test yuklash</b>
     <p class="mute small" style="margin:6px 0 12px">Bir yoki bir nechta .txt fayl. Format: <code>#</code> savol, <code>+</code> to‘g‘ri javob, <code>-</code> noto‘g‘ri javob. Shu nomdagi fayl qayta yuklansa, yangilanadi; natijalar saqlanib qoladi.</p>
     <button class="btn sm" data-act="upload">＋ Fayl yuklash</button></div>`);
@@ -512,11 +560,13 @@ const ACT={
   async deck(v){await loadDeck(v);CFG.block=0;saveCfg();home()},
   async deldeck(v){
     const d=DECKS.find(d=>d.id===v);if(!d||!confirm('«'+d.name+'» o‘chirilsinmi?'))return;
-    DECKS=DECKS.filter(x=>x.id!==v);LS.set('ik_decks',DECKS);LS.del('ik_deck_'+v);delete CFG.exams[v];saveCfg();
+    DECKS=DECKS.filter(x=>x.id!==v);LS.set('ik_decks',DECKS);LS.del('ik_deck_'+v);LS.del('ik_ai_'+v);delete CFG.exams[v];saveCfg();
     if(CFG.deck===v)await loadDeck('builtin');decks()},
   view(){const pl=pool(),weak=pl.filter(q=>status(q.id)!=='s');start('view',(weak.length?weak:pl).map(q=>'v:'+q.id))},
   auto(){if(timer)stopTimer();else timer=setInterval(()=>{if(S&&S.mode==='view')ACT.next();else stopTimer()},5000);renderQ()},
   preview(v){CFG.preview=v==='1';saveCfg();settings()},
+  ai(){aiRun()},
+  aistop(){if(AIRUN){if(AIRUN.stopped){AIRUN=null;home()}else{AIRUN.stopped=true;AIRUN.msg='To‘xtatilmoqda…';aiView()}}},
   block(v){CFG.block=+v;saveCfg();home()},
   learn(){start('learn',withPreview(pickLearn(CFG.size)))},
   errors(){start('errors',shuffle(pool().filter(q=>status(q.id)==='e')).slice(0,30).map(q=>q.id))},

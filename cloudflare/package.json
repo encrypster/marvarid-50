@@ -1,0 +1,8 @@
+{
+  "name": "test-trenajyor",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs", "deploy": "node build.mjs && wrangler deploy", "dev": "node build.mjs && wrangler dev" },
+  "dependencies": { "@anthropic-ai/sdk": "latest" },
+  "devDependencies": { "wrangler": "latest" }
+}

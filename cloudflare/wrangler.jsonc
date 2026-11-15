@@ -1,0 +1,9 @@
+{
+  // Test trenajyor: PWA (../ik509, build.mjs orqali Worker ichiga joylanadi) + AI tahlil API (/api/*)
+  // Sirlar repozitoriyda saqlanmaydi:  wrangler secret put ANTHROPIC_API_KEY  /  ACCESS_CODE
+  "name": "test-trenajyor",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true }
+}
