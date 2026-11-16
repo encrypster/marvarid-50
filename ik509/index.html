@@ -175,6 +175,8 @@ function norm(s){return s.toLowerCase().replace(/[‘’'`ʻʼ´]/g,"'").replace
 function hash(s){let a=2166136261,b=5381;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,16777619);b=(Math.imul(b,33)+c)|0}
   return (a>>>0).toString(36)+(b>>>0).toString(36)}
 // To‘g‘ri javob FAQAT '+' bilan boshlangan qatordan olinadi. Belgisiz qatorlar taxmin qilinadi va hisobotda ko‘rsatiladi.
+// Ma’noga ta’sir qilmaydigan belgilar: nuqta, vergul, ikki nuqta, qavs, qo‘shtirnoq va h.k. (+ − < > = % va raqamlar saqlanadi)
+const soft=t=>norm(t).replace(/[.,:;!?"«»“”„()\[\]{}'…]/g,' ').replace(/\s+/g,' ').trim();
 function parse(text){
   const out=[],seen={};let cur=null,last='',blank=true;
   const rep={blocks:0,dups:0,orphans:0,dropped:[],guessed:[],flags:[]};
@@ -197,7 +199,8 @@ function parse(text){
     blank=false;
   }
   rep.blocks=out.length;
-  const res=[],same={};
+  const res=[],same={},near={};
+  rep.merged=[];
   const stated=t=>{const m=t.match(/\((\d)\)/)||t.match(/(?:^|\s)(\d)\s*ta(?:\s|$)/);return m&&+m[1]>=2&&+m[1]<=6?+m[1]:0};
   for(const q of out){
     q.opts=q.opts.filter(o=>o.t);
@@ -212,6 +215,9 @@ function parse(text){
     const key=o=>norm(o.t);
     q.id=hash(norm(q.q)+'|'+q.opts.filter(o=>o.c).map(key).sort().join('~')+'|'+q.opts.filter(o=>!o.c).map(key).sort().join('~'));
     if(seen[q.id]){rep.dups++;q.dupOf=seen[q.id];continue}seen[q.id]=q;
+    // Faqat tinish belgisi/bo‘shliq bilan farq qiladigan takror: savol, to‘g‘ri va noto‘g‘ri javoblar aynan bir xil bo‘lsagina birlashtiriladi.
+    const softKey=soft(q.q)+'|'+q.opts.filter(o=>o.c).map(o=>soft(o.t)).sort().join('~')+'|'+q.opts.filter(o=>!o.c).map(o=>soft(o.t)).sort().join('~');
+    if(near[softKey]){rep.dups++;rep.merged.push({id:near[softKey].id,q:q.q});q.dupOf=near[softKey];continue}near[softKey]=q;
     q.no=res.length+1;res.push(q);rep.guessed.push(...pend);
     // avtomatik tekshiruvlar
     const m=stated(q.q);
@@ -624,6 +630,7 @@ function check(){
   <div class="card"><p><b>${r.blocks}</b> ta savol bloki o‘qildi → <b>${ALL.length}</b> ta noyob savol.</p>
     <p class="mute small" style="margin-top:6px">${r.dups} ta aynan takror savol birlashtirildi · ${Object.keys(types).sort().map(k=>k+' javobli: '+types[k]).join(' · ')}</p>
     <p class="small" style="margin-top:10px">To‘g‘ri javob faqat faylda <b>+</b> bilan boshlangan qatordan olinadi. AI javob kalitini hech qachon o‘zgartirmaydi — faqat shubhali joylarni ko‘rsatadi.</p></div>`;
+  if(r.merged&&r.merged.length)h+='<h3>Birlashtirilgan takrorlar ('+r.merged.length+')</h3><p class="mute small" style="margin-bottom:4px">Bu savollar faqat tinish belgisi yoki bo‘shliq bilan farq qilgan; savol so‘zlari, to‘g‘ri va noto‘g‘ri javoblari aynan bir xil. Bittasi qoldirildi.</p>'+r.merged.map(m=>qCard(BYID[m.id],'<div class="mute small" style="margin-top:6px">Takrori: «'+esc(m.q)+'»</div>')).join('');
   if(r.orphans)h+='<h3>Savolsiz qatorlar</h3><div class="item">Fayl boshida savolga tegishli bo‘lmagan '+r.orphans+' ta + / - qator bor — ular tashlab ketildi.</div>';
   if(r.dropped.length)h+='<h3>Tashlab ketilgan savollar ('+r.dropped.length+')</h3>'+r.dropped.map(d=>'<div class="item"><div class="q">'+esc(d.q||'(matnsiz)')+'</div><div class="w" style="text-decoration:none">Sabab: '+esc(d.why)+'</div></div>').join('');
   if(r.guessed.length)h+='<h3>Belgisiz qatorlar ('+r.guessed.length+')</h3><p class="mute small" style="margin-bottom:4px">Bu qatorlar #, + yoki - bilan boshlanmagan. Ilova ularni quyidagicha tushundi — faylda to‘g‘rilab, qayta yuklagan ma’qul.</p>'+
