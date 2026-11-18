@@ -14,7 +14,9 @@
     { "binding": "KV", "id": "7ab5ddb43deb434895ce96a144e795e1" }
   ],
   "vars": {
-    "DAILY_LIMIT": "5"
+    "DAILY_LIMIT": "5",
+    // Barcha foydalanuvchilar uchun kunlik tekshiruvlar chegarasi (Claude balansini himoya qiladi).
+    "DAILY_GLOBAL_LIMIT": "40"
   },
   "observability": { "enabled": true }
   // Maxfiy qiymatlar (Cloudflare sahifasida Settings -> Variables and Secrets):

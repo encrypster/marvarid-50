@@ -12,6 +12,9 @@ const BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
 const MAX_FORECAST = 5;
 const MAX_LAW_REFS = 4;
 const INIT_DATA_MAX_AGE_S = 24 * 3600;
+// Qonunlar bazasi shundan eski boʻlsa, administratorga ogohlantirish yuboriladi.
+const LAWS_STALE_HOURS = 36;
+const KEY_ADMIN = "admin:chat";
 const CLAUDE_MODEL = "claude-opus-5-5";
 // Til kodda aniqlanadi, modelga berilmaydi.
 const LANGUAGE_CHECK = "shartnoma_tili";
@@ -23,7 +26,6 @@ const MAX_TEXT_CHARS = 150_000;
 const MIN_CONTRACT_CHARS = 800;
 const TELEGRAM_LIMIT = 4096;
 // Telegram javobni shuncha kutadi deb hisoblaymiz; undan keyin ish waitUntil ichida davom etadi.
-const RESPOND_WITHIN_MS = 55_000;
 const STATUSES = ["muammo", "yoq", "joyida", "aniqlanmadi"];
 const SEVERITY_ORDER = { yuqori: 0, orta: 1, past: 2 };
 const SEVERITY_LABEL = { yuqori: "yuqori xavf", orta: "oʻrta xavf", past: "past xavf" };
@@ -41,6 +43,15 @@ const START_TEXT =
   "• Pasport, JSHSHIR, telefon va karta raqamlari tahlildan oldin yashiriladi.\n" +
   "• Rasm va skanerlangan fayllar hozircha oʻqilmaydi.\n" +
   "• Bu dastlabki tekshiruv, huquqiy maslahat emas.";
+const PRIVACY_TEXT =
+  "Maxfiylik\n\n" +
+  "• Siz yuborgan shartnoma matni tahlil uchun Anthropic kompaniyasining Claude xizmatiga yuboriladi. " +
+  "Bot fayl va matnni saqlamaydi.\n" +
+  "• Tahlildan oldin pasport, JSHSHIR, telefon, karta, hisob raqami va email avtomatik yashiriladi. " +
+  "Ism, manzil va quruvchi nomi matnda qoladi.\n" +
+  "• Bot faqat Telegram ID raqamingizni va kunlik tekshiruvlar sonini ikki kun saqlaydi — limit uchun.\n" +
+  "• Natija dastlabki avtomatik tekshiruv, huquqiy maslahat emas.";
+
 const DISCLAIMER =
   "Bu dastlabki avtomatik tekshiruv, huquqiy maslahat emas. " +
   "Imzolashdan oldin shartnomani yuristga koʻrsating.";
@@ -316,6 +327,16 @@ function contractMessage(contract) {
 }
 
 async function askClaude(env, system, contract, schema, effort) {
+  try {
+    return await callClaude(env, system, contract, schema, effort);
+  } catch (error) {
+    // Kalit, ruxsat yoki balans muammosi foydalanuvchi emas, administrator hal qiladigan masala.
+    if (error instanceof UserError && error.adminAlert) await alertAdmin(env, "claude", error.adminAlert);
+    throw error;
+  }
+}
+
+async function callClaude(env, system, contract, schema, effort) {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 1 });
   let response;
   try {
@@ -333,14 +354,21 @@ async function askClaude(env, system, contract, schema, effort) {
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
       console.error("Claude kaliti yaroqsiz yoki ruxsati yoʻq:", error.message);
-      throw new UserError("Tahlil xizmati sozlanmagan. Birozdan soʻng urinib koʻring.");
+      throw Object.assign(new UserError("Tahlil xizmati sozlanmagan. Birozdan soʻng urinib koʻring."), {
+        adminAlert: `Claude API kaliti rad etildi (${error.status}). Cloudflare'dagi ANTHROPIC_API_KEY ni tekshiring.`,
+      });
     }
     if (error instanceof Anthropic.RateLimitError) {
       throw new UserError("Xizmat band. Bir daqiqadan soʻng qayta urinib koʻring.");
     }
     if (error instanceof Anthropic.APIError) {
       console.error(`Claude xatosi ${error.status}:`, error.message);
-      throw new UserError("Tahlil xizmati hozir javob bermadi. Birozdan soʻng urinib koʻring.");
+      const billing = /credit|balance|billing/i.test(String(error.message));
+      throw Object.assign(new UserError("Tahlil xizmati hozir javob bermadi. Birozdan soʻng urinib koʻring."), {
+        adminAlert: billing
+          ? "Claude balansi tugadi yoki toʻlov muammosi bor. platform.claude.com da balansni toʻldiring."
+          : `Claude API xatosi ${error.status}: ${String(error.message).slice(0, 200)}`,
+      });
     }
     throw error;
   }
@@ -646,12 +674,53 @@ async function firstTime(env, key, ttl) {
   return true;
 }
 
+// ---------- Administrator ----------
+
+/** Administratorni biriktirish kodi: /start admin_<kod>. Tokendan hosil qilinadi, kodda saqlanmaydi. */
+export async function adminCode(token) {
+  return (await webhookSecret(`admin:${token}`)).slice(0, 24);
+}
+
+// Bir vaqtda kelgan ikki xato bitta xabar boʻlishi uchun: KV yozuvidan oldin shu nusxada belgilanadi.
+const alertedHere = new Set();
+
+/** Administratorga Telegram orqali xabar; bir turdagi xabar kuniga bir marta. */
+export async function alertAdmin(env, kind, text) {
+  const key = `alert:${kind}:${today()}`;
+  if (alertedHere.has(key)) return false;
+  alertedHere.add(key);
+  try {
+    const chatId = await env.KV.get(KEY_ADMIN);
+    if (!chatId) {
+      alertedHere.delete(key);
+      return false;
+    }
+    if (await env.KV.get(key)) return false;
+    await env.KV.put(key, "1", { expirationTtl: 172_800 });
+    await telegram(env, "sendMessage", { chat_id: Number(chatId), text: `⚠️ Ishonchli Shartnoma: ${text}` });
+    return true;
+  } catch (error) {
+    console.error("Ogohlantirish yuborilmadi:", String(error?.message || error));
+    return false;
+  }
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+
 /** Limitni tekshiradi, matnni oladi va tahlil qiladi. Muammo boʻlsa UserError tashlaydi. */
 async function runCheck(env, userId, loadText, onStart) {
-  const usageKey = `use:${userId}:${new Date().toISOString().slice(0, 10)}`;
+  const usageKey = `use:${userId}:${today()}`;
   const limit = Number(env.DAILY_LIMIT || 3);
   const used = Number((await env.KV.get(usageKey)) || 0);
   if (used >= limit) throw new UserError(`Bugungi limit (${limit} ta tekshiruv) tugadi.`);
+  // Umumiy kunlik chegara: Claude balansini kutilmagan oqimdan himoya qiladi.
+  const totalKey = `use:all:${today()}`;
+  const totalLimit = Number(env.DAILY_GLOBAL_LIMIT || 40);
+  const total = Number((await env.KV.get(totalKey)) || 0);
+  if (total >= totalLimit) {
+    await alertAdmin(env, "global-limit", `bugungi umumiy limit (${totalLimit} ta tekshiruv) tugadi. Foydalanuvchilar ertaga davom eta oladi.`);
+    throw new UserError("Bugun xizmatga soʻrovlar juda koʻp boʻldi. Ertaga qayta urinib koʻring.");
+  }
 
   const text = (await loadText()).trim();
   if (text.length < MIN_CONTRACT_CHARS) {
@@ -662,7 +731,10 @@ async function runCheck(env, userId, loadText, onStart) {
   if (text.length > MAX_TEXT_CHARS) throw new UserError("Hujjat juda uzun. Faqat shartnomaning oʻzini yuboring.");
   if (onStart) await onStart();
   const result = await analyze(env, text);
-  await env.KV.put(usageKey, String(used + 1), { expirationTtl: 172_800 });
+  await Promise.all([
+    env.KV.put(usageKey, String(used + 1), { expirationTtl: 172_800 }),
+    env.KV.put(totalKey, String(total + 1), { expirationTtl: 172_800 }),
+  ]);
   return result;
 }
 
@@ -705,7 +777,13 @@ async function handleUpdate(env, update, appUrl) {
       "Rasmlar hozircha oʻqilmaydi. Shartnomani PDF yoki DOCX fayl qilib yuboring yoki matnini nusxalab yozing.",
     );
   } else if (typeof message.text === "string") {
-    if (message.text.startsWith("/start")) {
+    const adminStart = /^\/start admin_([a-f0-9]{24})$/.exec(message.text.trim());
+    if (adminStart && adminStart[1] === (await adminCode(env.TELEGRAM_BOT_TOKEN))) {
+      await env.KV.put(KEY_ADMIN, String(chatId));
+      await sendText(env, chatId, "Siz administrator sifatida biriktirildingiz. Kuzatuv xatolari, balans va limit haqidagi ogohlantirishlar shu chatga keladi.");
+    } else if (message.text.startsWith("/privacy")) {
+      await sendText(env, chatId, PRIVACY_TEXT);
+    } else if (message.text.startsWith("/start")) {
       await telegram(env, "sendMessage", {
         chat_id: chatId,
         text: START_TEXT,
@@ -785,7 +863,15 @@ export default {
     if (!env.TELEGRAM_BOT_TOKEN) return new Response("TELEGRAM_BOT_TOKEN oʻrnatilmagan", { status: 500 });
     const secret = await webhookSecret(env.TELEGRAM_BOT_TOKEN);
 
-    if (request.method === "GET" && url.pathname === "/health") return new Response("ok");
+    if (request.method === "GET" && url.pathname === "/health") {
+      const view = await getLawsView(env);
+      const ageHours = view?.checkedAt ? Math.round((Date.now() - Date.parse(view.checkedAt)) / 3_600_000) : null;
+      return Response.json({
+        ok: true,
+        claude: Boolean(env.ANTHROPIC_API_KEY),
+        laws: { checkedAt: view?.checkedAt ?? null, ageHours, stale: ageHours === null || ageHours > LAWS_STALE_HOURS },
+      });
+    }
     if (request.method === "GET" && url.pathname === "/api/laws") {
       const view = await getLawsView(env);
       return Response.json(view || { empty: true, current: [], upcoming: [], pending: [] }, { headers: { "cache-control": "public, max-age=120" } });
@@ -822,29 +908,41 @@ export default {
       const work = handleUpdate(env, update, `${url.origin}/`).catch((error) =>
         console.error("Yangilanish ishlanmadi:", error?.stack || String(error)),
       );
+      // Tahlil bir daqiqadan oshishi mumkin. Javob ish tugaguncha ushlab turiladi: ulanish uzilsa,
+      // waitUntil yana 30 soniya beradi, Telegram qayta yuborgan nusxa esa yuqorida tashlanadi.
       ctx.waitUntil(work);
-      await Promise.race([work, new Promise((resolve) => setTimeout(resolve, RESPOND_WITHIN_MS))]);
+      await work;
       return new Response("ok");
     }
 
     return new Response("topilmadi", { status: 404 });
   },
 
-  // Kunlik kuzatuv: Claude hujjatlarni qidiradi, matnlar yangilanadi, oʻzgarganlari qayta oʻqiladi.
-  async scheduled(controller, env, ctx) {
-    ctx.waitUntil(
-      (async () => {
-        if (controller.cron === DAILY_CRON) {
-          console.log("Kunlik kuzatuv:", JSON.stringify(await runDaily(env)));
-        } else {
-          const log = await digestPending(env);
-          if (log.length) {
-            await buildLawsView(env);
-            resetLawsCache();
-            console.log("Navbatdagi hujjatlar:", JSON.stringify(log));
-          }
-        }
-      })(),
-    );
+  // Kunlik kuzatuv: Claude hujjatlarni qidiradi, tahrir sanalari tekshiriladi, yangi tahrirlar qayta oʻqiladi.
+  async scheduled(controller, env) {
+    if (controller.cron === DAILY_CRON) {
+      const log = await runDaily(env);
+      console.log("Kunlik kuzatuv:", JSON.stringify(log));
+      const failed = Object.entries(log).filter(([, value]) => typeof value === "string" && value.startsWith("xato"));
+      if (failed.length) {
+        await alertAdmin(env, "daily", `kunlik qonunlar kuzatuvida xato: ${failed.map(([step, value]) => `${step} — ${value}`).join("; ").slice(0, 600)}`);
+      }
+      return;
+    }
+    try {
+      const log = await digestPending(env);
+      if (log.length) {
+        await buildLawsView(env);
+        resetLawsCache();
+        console.log("Navbatdagi hujjatlar:", JSON.stringify(log));
+      }
+    } catch (error) {
+      console.error("Navbatdagi hujjatlar oʻqilmadi:", String(error?.message || error));
+    }
+    const view = await getLawsView(env);
+    const ageHours = view?.checkedAt ? (Date.now() - Date.parse(view.checkedAt)) / 3_600_000 : Infinity;
+    if (ageHours > LAWS_STALE_HOURS) {
+      await alertAdmin(env, "stale", `qonunlar bazasi ${Number.isFinite(ageHours) ? `${Math.round(ageHours)} soatdan beri` : "hali"} yangilanmagan.`);
+    }
   },
 };

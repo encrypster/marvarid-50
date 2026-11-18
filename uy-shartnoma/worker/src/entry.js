@@ -22,7 +22,9 @@ const FONTS = {
   "plex-mono-cyrillic-ext-400.woff2": plexCyrillicExt400,
 };
 
+// ...bot: cron (scheduled) va boshqa ishlovchilar ham uzatiladi; ularni yoʻqotish kunlik kuzatuvni toʻxtatadi.
 export default {
+  ...bot,
   async fetch(request, env, ctx) {
     const { pathname } = new URL(request.url);
     if (request.method === "GET" && pathname === "/") {

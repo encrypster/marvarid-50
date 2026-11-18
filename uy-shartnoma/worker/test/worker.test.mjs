@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import worker, {
+  adminCode,
   buildReport,
   buildView,
   languageFinding,
@@ -227,7 +228,11 @@ test("webhook himoyasi, /health, /setup va /start", async () => {
   const { calls, send, sent, get } = setup();
   assert.equal((await send(message({ text: "/start" }), "notogri")).status, 401);
   assert.equal(calls.telegram.length, 0);
-  assert.equal(await (await get("/health")).text(), "ok");
+  const health = await (await get("/health")).json();
+  assert.equal(health.ok, true);
+  assert.equal(health.claude, true);
+  assert.equal(health.laws.checkedAt, LAWS_VIEW.checkedAt);
+  assert.equal(health.laws.stale, true); // namunadagi sana eski
 
   await get("/setup");
   const [hook, menu] = calls.telegram.slice(-2);
@@ -472,4 +477,51 @@ test("refresh: sana oʻzgarmasa matn qayta olinmaydi, yangi tahrirda olinadi", a
   assert.match((await refresh(env))[0], /biriktirildi/);
   assert.equal(JSON.parse(kv.get("laws:digest:-111189")).edition, "28.01.2027");
   assert.equal(JSON.parse(kv.get("laws:doc:-111189")).text, "eski");
+});
+
+test("kirish fayli cron chaqiruvlarini ham uzatadi", () => {
+  // entry.js .html/.woff2 import qiladi, shuning uchun uni Node'da yuklab boʻlmaydi: manbasi tekshiriladi.
+  const entry = readFileSync(new URL("../src/entry.js", import.meta.url), "utf8");
+  assert.match(entry, /export default \{\s*\/\/[^\n]*\n?\s*\.\.\.bot,|export default \{\s*\.\.\.bot,/);
+  assert.equal(typeof worker.scheduled, "function");
+});
+
+test("administrator: maxfiy havola bilan biriktiriladi, ogohlantirishlar kuniga bir marta", async () => {
+  const { env, send, sent, calls } = setup();
+  await send(message({ text: "/start admin_000000000000000000000000" }, 1));
+  assert.equal(await env.KV.get("admin:chat"), null);
+  await send(message({ text: `/start admin_${await adminCode(TOKEN)}` }, 2));
+  assert.equal(await env.KV.get("admin:chat"), "7");
+  assert.ok(sent().at(-1).includes("administrator sifatida"));
+
+  await send(message({ text: "/privacy" }, 3));
+  assert.ok(sent().at(-1).includes("Anthropic") && sent().at(-1).includes("saqlamaydi"));
+
+  // Eskirgan baza: 3 soatlik cron ogohlantiradi, ikkinchi marta shu kuni yubormaydi.
+  const before = calls.telegram.length;
+  await worker.scheduled({ cron: "47 */3 * * *" }, env);
+  await worker.scheduled({ cron: "47 */3 * * *" }, env);
+  const alerts = calls.telegram.slice(before).filter((c) => c.method === "sendMessage");
+  assert.equal(alerts.length, 1);
+  assert.equal(alerts[0].body.chat_id, 7);
+  assert.ok(alerts[0].body.text.includes("yangilanmagan"));
+});
+
+test("umumiy kunlik chegara va Claude kaliti xatosida administratorga xabar", async () => {
+  const limited = setup();
+  limited.env.DAILY_GLOBAL_LIMIT = "1";
+  await limited.env.KV.put("admin:chat", "99");
+  assert.ok((await (await limited.api({ headers: signed(), body: SAMPLE })).json()).ok);
+  const second = await (await limited.api({ headers: { "x-telegram-init-data": signInitData(43) }, body: SAMPLE })).json();
+  assert.ok(!second.ok && second.error.includes("soʻrovlar juda koʻp"));
+  assert.ok(limited.calls.telegram.some((c) => c.body.chat_id === 99 && c.body.text.includes("umumiy limit")));
+
+  const badKey = setup({
+    claudeReply: () => Response.json({ type: "error", error: { type: "authentication_error", message: "x" } }, { status: 401, headers: { "x-should-retry": "false" } }),
+  });
+  await badKey.env.KV.put("admin:chat", "99");
+  await badKey.api({ headers: signed(), body: SAMPLE });
+  const alert = badKey.calls.telegram.filter((c) => c.body.chat_id === 99);
+  assert.equal(alert.length, 1); // ikki parallel soʻrov, lekin bitta xabar
+  assert.ok(alert[0].body.text.includes("ANTHROPIC_API_KEY"));
 });

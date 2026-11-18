@@ -112,13 +112,31 @@ Bot profili (nomi, tavsifi, rasmi) Bot API orqali oʻrnatilgan.
 ```bash
 cd worker
 npm install
-npm test                                   # 19 ta test, tarmoqsiz
+npm test                                   # 22 ta test, tarmoqsiz
 CLOUDFLARE_API_TOKEN=... npx wrangler deploy
 ```
 
 Maxfiy qiymatlar (Cloudflare: Worker → Settings → Variables and Secrets):
 `TELEGRAM_BOT_TOKEN` va `ANTHROPIC_API_KEY`. Token almashsa, `/setup`
 manzilini bir marta oching.
+
+## Production rejimi
+
+| Himoya | Qanday ishlaydi |
+|---|---|
+| Kunlik qonunlar kuzatuvi | Cron: 01:17 UTC toʻliq sikl, har 3 soatda navbatdagi hujjatlar. `entry.js` barcha ishlovchilarni (`...bot`) uzatadi — busiz cron jimgina ishlamaydi. |
+| Foydalanuvchi limiti | `DAILY_LIMIT` — bir kishiga kuniga 5 ta tekshiruv |
+| Umumiy limit | `DAILY_GLOBAL_LIMIT` — hammaga kuniga 40 ta (≈20 $); Claude balansini himoya qiladi |
+| Ogohlantirishlar | Administrator chatiga Telegram xabari: kuzatuv xatosi, baza 36 soatdan eski, Claude kaliti yoki balans muammosi, umumiy limit tugashi. Har turi kuniga bir marta. |
+| Administratorni biriktirish | `https://t.me/<bot>?start=admin_<kod>`; kod bot tokenidan hosil qilinadi (`adminCode`), kodda saqlanmaydi |
+| Holat tekshiruvi | `GET /health` → `{ ok, claude, laws: { checkedAt, ageHours, stale } }` — tashqi monitoring uchun |
+| Uzoq tahlil (chatda) | Webhook javobi tahlil tugaguncha ushlab turiladi; Telegram qayta yuborgan nusxa tashlanadi |
+| Maxfiylik | `/privacy` buyrugʻi |
+| Jurnallar | Cloudflare Workers Logs (`observability` yoqilgan) |
+
+Kalitlar almashtirilsa: Cloudflare'da `TELEGRAM_BOT_TOKEN` yoki `ANTHROPIC_API_KEY` ni yangilang.
+Bot tokeni almashsa, `/setup` manzilini bir marta oching va administrator havolasini qayta
+yarating (kod tokendan hosil qilinadi).
 
 ## Cheklovlar
 
